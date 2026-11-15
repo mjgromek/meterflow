@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/MeterFlow.Api/MeterFlow.Api.csproj" />
+    <Project Path="src/MeterFlow.Domain/MeterFlow.Domain.csproj" />
+    <Project Path="src/MeterFlow.Infrastructure/MeterFlow.Infrastructure.csproj" />
+    <Project Path="src/MeterFlow.Mcp/MeterFlow.Mcp.csproj" />
+    <Project Path="src/MeterFlow.Simulator/MeterFlow.Simulator.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/MeterFlow.Api.Tests/MeterFlow.Api.Tests.csproj" />
+    <Project Path="tests/MeterFlow.Domain.Tests/MeterFlow.Domain.Tests.csproj" />
+  </Folder>
+</Solution>

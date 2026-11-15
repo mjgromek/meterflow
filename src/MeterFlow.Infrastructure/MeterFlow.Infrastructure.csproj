@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\MeterFlow.Domain\MeterFlow.Domain.csproj" />
+  </ItemGroup>
+
+</Project>
