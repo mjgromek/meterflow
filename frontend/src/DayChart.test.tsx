@@ -10,6 +10,26 @@ function axisLabels(day: ReturnType<typeof longDay>) {
   return Array.from(container.querySelectorAll("text.axis")).map((t) => [t.textContent, Number(t.getAttribute("x")) / 8]);
 }
 
+describe("DayChart flags", () => {
+  it("draws missing and rejected quarters apart, each with a legend entry", () => {
+    const day = longDay();
+    day.quarters[9] = { ...day.quarters[9], readings: 2, kwh: 0.1 };
+    day.rejected = [{ moment: "2026-10-25T02:35:00+01:00", reason: "NegativeKwh" }];
+
+    const { container } = render(<DayChart bars={toBars(day)} rejected={1} />);
+
+    expect(Array.from(container.querySelectorAll("rect.bar.missing, rect.bar.rejected")).map((r) => r.getAttribute("class"))).toEqual([
+      "bar flagged missing",
+      "bar flagged rejected",
+    ]);
+    expect(Array.from(container.querySelectorAll(".legend .swatch")).map((s) => s.getAttribute("class"))).toEqual([
+      "swatch",
+      "swatch missing",
+      "swatch rejected",
+    ]);
+  });
+});
+
 describe("DayChart axis", () => {
   it("labels local 00:00, 06:00, 12:00 and 18:00 on the 25-hour day", () => {
     // Summer time until 03:00 local, so 06:00 local is 05:00Z, 7 hours after 22:00Z.

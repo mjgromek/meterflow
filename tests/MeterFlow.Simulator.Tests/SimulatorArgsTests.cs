@@ -13,6 +13,21 @@ public class SimulatorArgsTests
         Assert.Equal(new SimulatorOptions(5, 2, "out.csv", new Uri("http://localhost:5265")), options);
     }
 
+    [Fact]
+    public void Environment_api_url_selects_http_mode_unless_api_is_given()
+    {
+        var (fromEnv, _) = SimulatorArgs.Parse(["2"], "http://env:5265");
+        var (fromArgs, _) = SimulatorArgs.Parse(["--api", "http://args:5265"], "http://env:5265");
+        var (csv, _) = SimulatorArgs.Parse([], "");
+        var (_, badEnv) = SimulatorArgs.Parse([], "not a url");
+
+        Assert.Equal(new Uri("http://env:5265"), fromEnv?.Api);
+        Assert.Equal(new Uri("http://args:5265"), fromArgs?.Api);
+        Assert.Null(csv?.Api);
+        Assert.NotNull(csv);
+        Assert.False(string.IsNullOrWhiteSpace(badEnv));
+    }
+
     [Theory]
     [InlineData("--api")]
     [InlineData("--api", "not a url")]

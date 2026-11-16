@@ -173,16 +173,12 @@ public class ReadingsTests(MeterFlowFactory factory) : IClassFixture<MeterFlowFa
         }
     }
 
-    /// <summary>Throws for one meter, to simulate a database error while storing a batch.</summary>
-    private sealed class FailingStore(SqliteReadingStore inner, string failingEan, TaskCompletionSource thrown) : IReadingStore
+    /// <summary>Runs beforeAdd before each store, to simulate a failing or a slow database.</summary>
+    private sealed class HookedStore(SqliteReadingStore inner, Action<Reading> beforeAdd) : IReadingStore
     {
         public bool Add(Reading reading)
         {
-            if (reading.Ean.Value == failingEan)
-            {
-                thrown.TrySetResult();
-                throw new InvalidOperationException("Simulated database error.");
-            }
+            beforeAdd(reading);
             return inner.Add(reading);
         }
 
@@ -206,7 +202,14 @@ public class ReadingsTests(MeterFlowFactory factory) : IClassFixture<MeterFlowFa
         using var api = database.WithWebHostBuilder(b => b.ConfigureTestServices(s =>
         {
             s.AddScoped<SqliteReadingStore>();
-            s.AddScoped<IReadingStore>(p => new FailingStore(p.GetRequiredService<SqliteReadingStore>(), failing, thrown));
+            s.AddScoped<IReadingStore>(p => new HookedStore(p.GetRequiredService<SqliteReadingStore>(), r =>
+            {
+                if (r.Ean.Value == failing)
+                {
+                    thrown.TrySetResult();
+                    throw new InvalidOperationException("Simulated database error.");
+                }
+            }));
         }));
 
         await Post(api, $$"""[{"ean":"{{failing}}","moment":"2026-03-02T10:00:00+01:00","kwh":0.25}]""");
@@ -216,6 +219,43 @@ public class ReadingsTests(MeterFlowFactory factory) : IClassFixture<MeterFlowFa
         Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
         Assert.Single(await WaitUntilStored(api, later, 1));
         Assert.Equal(HttpStatusCode.OK, (await api.CreateClient().GetAsync("/health")).StatusCode);
+    }
+
+    [Fact]
+    public async Task A_post_waits_while_the_queue_is_full_and_a_cancelled_one_enqueues_nothing()
+    {
+        string ean = TestEan(9);
+        string Item(int minute) => $$"""[{"ean":"{{ean}}","moment":"2026-03-02T10:{{minute:D2}}:00+01:00","kwh":0.25}]""";
+        var storing = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var database = new MeterFlowFactory();
+        using var api = database.WithWebHostBuilder(b => b.UseSetting("Pipeline:QueueCapacity", "1").ConfigureTestServices(s =>
+        {
+            s.AddScoped<SqliteReadingStore>();
+            s.AddScoped<IReadingStore>(p => new HookedStore(p.GetRequiredService<SqliteReadingStore>(), _ =>
+            {
+                storing.TrySetResult();
+                release.Task.Wait(TimeSpan.FromSeconds(5));
+            }));
+        }));
+
+        // 10:00 is taken off the queue and blocks in the store; 10:05 fills the one slot.
+        await Post(api, Item(0));
+        await storing.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.Equal(HttpStatusCode.Accepted, (await Post(api, Item(5))).StatusCode);
+        var waiting = Post(api, Item(10));
+        using var cancel = new CancellationTokenSource();
+        var cancelled = api.CreateClient().PostAsync("/readings", new StringContent(Item(15), Encoding.UTF8, "application/json"), cancel.Token);
+
+        Assert.NotSame(waiting, await Task.WhenAny(waiting, Task.Delay(200)));
+        cancel.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => cancelled);
+        release.SetResult();
+        Assert.Equal(HttpStatusCode.Accepted, (await waiting.WaitAsync(TimeSpan.FromSeconds(5))).StatusCode);
+        await Post(api, Item(20));
+
+        var stored = await WaitUntilStored(api, ean, 4);
+        Assert.Equal([0, 5, 10, 20], stored.Select(r => r.Moment.Minute).Order());
     }
 
     [Fact]

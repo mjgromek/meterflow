@@ -7,32 +7,22 @@ email), so pre-2026-11-16 hashes from conversations no longer resolve.
 
 ## Current slice
 
-None. M11 complete: checker PASS over M6, M7, M10, M11 (real run incl. SIGINT drain,
-CORS, export, MCP and simulator error paths); its three code P2s fixed; 115 .NET + 9
-frontend tests. Auto-approved.
+None. Patch v1.2.1 done (117 .NET + 11 frontend tests). Backlog empty apart from non-goals
+recorded in PROJECT.md. All roadmap milestones released.
 
-## Acceptance criteria (M11)
+## Acceptance criteria (patch)
 
-- Gaps over a window: `ReadingChecks.FindGaps(readings, from, to)` reports every missing
-  5-minute moment in [from, to) per meter that has readings in the window, including at the
-  window edges. `/gaps`, the day endpoint and `/quality` use it. Existing FindGaps behaviour
-  stays for callers without a window.
-- `ReadingCsv.Parse`: a trailing '\r' on any line is ignored; line 1 must equal the header
-  `ean,moment,kwh`, otherwise it is parsed as a data row (so a headerless file loses nothing).
-- Export: written to a temp file in the same folder, then `File.Move(overwrite: true)`; a
-  per-day lock (or a single semaphore) stops two exports of the same day racing.
-- Simulator: `--api` without a URL or with an invalid URL prints a usage message and exits
-  with code 1; an unreachable API or a failed batch prints one clear error line and exits 1
-  instead of a stack trace. Argument parsing is a testable function.
-- MCP tools: API unreachable or 5xx returns an "Error: ..." text naming the base URL,
-  instead of an unhandled exception.
-- `GET /` returns 404 (test).
-- Dashboard: x-axis labels at local 00:00, 06:00, 12:00 and 18:00 (by the quarter's local
-  start), so a DST day still shows those four labels at the right bars. Frontend test for
-  the 100- and 92-quarter days.
-
-Deliberately not in scope (stay in backlog): other time zones, exports of more than ~1M
-rows per day, a backpressure test, the simulator reading its URL from configuration.
+- Simulator: when `--api` is absent, `MeterFlow__ApiBaseUrl` (env var) or a `--api` default
+  from configuration selects HTTP mode; otherwise CSV as now. Test on the argument/config
+  parsing function.
+- API: queue capacity from configuration `Pipeline:QueueCapacity` (default 10,000). A test
+  with capacity 1 and a blocked processor/store shows a POST waits while the queue is full
+  and completes once it drains, and that a cancelled request returns without enqueuing.
+- Dashboard: missing readings and rejected readings get different colours and legend
+  entries (both at least 3:1 against the background in light and dark); a quarter with both
+  shows as rejected. Frontend test.
+- Non-goals recorded in PROJECT.md: time zones other than Europe/Amsterdam; streaming
+  exports for days above ~1M rows.
 
 ## Shipped in M3
 
