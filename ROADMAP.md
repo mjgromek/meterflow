@@ -68,7 +68,7 @@ covered: in Europe/Amsterdam a day has 92 or 100 quarter-hours, not 96.
 
 Done when: a DST-day test passes, and the failure mode of naive local times is documented.
 
-## [ ] M4. Web API
+## [x] M4. Web API
 Minimal API: `POST /readings`, `GET /meters/{ean}/consumption?from=&to=`, `GET /health`.
 The simulator sends over HTTP instead of writing CSV.
 
