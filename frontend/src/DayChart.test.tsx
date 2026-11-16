@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { DayChart } from "./DayChart";
 import { toBars } from "./day";
@@ -27,6 +27,26 @@ describe("DayChart flags", () => {
       "swatch missing",
       "swatch rejected",
     ]);
+  });
+});
+
+describe("DayChart tooltip", () => {
+  it("shows local time, kWh, readings and flags for the hovered or focused bar", () => {
+    const day = longDay();
+    day.quarters[9] = { ...day.quarters[9], readings: 2, kwh: 0.1 };
+    day.rejected = [{ moment: "2026-10-25T02:35:00+01:00", reason: "NegativeKwh" }];
+    const { container } = render(<DayChart bars={toBars(day)} rejected={1} />);
+    const bars = container.querySelectorAll("[data-bar]");
+
+    fireEvent.mouseEnter(bars[9]);
+    expect(screen.getByRole("tooltip")).toHaveTextContent("02:15 CEST · 0.1 kWh · 2 readings · missing readings");
+    expect(bars[9]).toHaveAttribute("aria-label", screen.getByRole("tooltip").textContent);
+
+    fireEvent.focus(bars[14]);
+    expect(screen.getByRole("tooltip")).toHaveTextContent("02:30 CET · 0.25 kWh · 3 readings · rejected reading");
+
+    fireEvent.blur(bars[14]);
+    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
   });
 });
 
