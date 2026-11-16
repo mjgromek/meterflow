@@ -1,6 +1,6 @@
 # 9. Minimal API with an in-memory store behind `IReadingStore`
 
-Status: Accepted · Milestone: M4
+Status: Storage part superseded by [12](0012-sqlite-store-with-ef-core.md) · Milestone: M4
 
 ## Context
 The API needs storage now; the database arrives in M5.

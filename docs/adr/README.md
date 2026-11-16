@@ -16,3 +16,5 @@ a new record that supersedes the old one; old records are not rewritten.
 | [9](0009-minimal-api-in-memory-store.md) | Minimal API with an in-memory store behind `IReadingStore` | M4 |
 | [10](0010-strict-input-per-item-rejection.md) | Strict API input, rejected per item | M4 |
 | [11](0011-in-process-api-tests.md) | API tests run in-process | M4 |
+| [12](0012-sqlite-store-with-ef-core.md) | Readings stored in SQLite through EF Core | M5 |
+| [13](0013-migrations-at-startup.md) | EF Core migrations, applied at startup | M5 |

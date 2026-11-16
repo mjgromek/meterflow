@@ -46,3 +46,10 @@ What: One numbered ADR per architecture decision, with its milestone; index in d
 Why: DECISIONS.md is pipeline state; the ADRs are the public, durable record per milestone.
 Rules out: Rewriting an old ADR; a changed decision gets a new ADR that supersedes it.
 Level: 1, requested by the human.
+
+## 2026-11-16 — Readings in SQLite via EF Core, keyed by (Ean, UTC ticks)
+What: SqliteReadingStore maps Reading without attributes; Moment as UTC ticks, PK (Ean, ticks).
+Why: SQLite cannot order or compare DateTimeOffset; the PK makes duplicates a database rule,
+     closing the check-then-insert race. Migrations applied at startup. See ADR 12 and 13.
+Rules out: Keeping the original UTC offset; async store methods before M6.
+Level: 1.
