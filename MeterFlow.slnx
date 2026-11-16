@@ -9,5 +9,6 @@
   <Folder Name="/tests/">
     <Project Path="tests/MeterFlow.Api.Tests/MeterFlow.Api.Tests.csproj" />
     <Project Path="tests/MeterFlow.Domain.Tests/MeterFlow.Domain.Tests.csproj" />
+    <Project Path="tests/MeterFlow.Simulator.Tests/MeterFlow.Simulator.Tests.csproj" />
   </Folder>
 </Solution>
