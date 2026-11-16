@@ -41,7 +41,7 @@ Repo, solution, projects, references, `.gitignore` and `Directory.Build.props`.
 Done when: `dotnet build` and `dotnet test` pass on an empty solution with warnings as
 errors.
 
-## [ ] M1. Domain types
+## [x] M1. Domain types
 `Ean` as a validated value type with a check-digit rule. `Reading` as a record: EAN,
 timestamp, kWh. `MeterKind` enum (electricity, gas).
 
