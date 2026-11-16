@@ -43,4 +43,18 @@ public class SqliteReadingStore(MeterFlowDbContext db) : IReadingStore
             .AsEnumerable()
             .OrderBy(m => m.Ean.Value, StringComparer.Ordinal)
             .ToList();
+
+    public void AddRejections(IEnumerable<Rejection> rejections)
+    {
+        db.Rejections.AddRange(rejections);
+        db.SaveChanges();
+        db.ChangeTracker.Clear();
+    }
+
+    public IEnumerable<Rejection> RejectionsBetween(DateTimeOffset from, DateTimeOffset to) =>
+        db.Rejections.AsNoTracking()
+            .Where(r => r.Moment != null
+                ? r.Moment >= from && r.Moment < to
+                : r.ReceivedAt >= from && r.ReceivedAt < to)
+            .ToList();
 }

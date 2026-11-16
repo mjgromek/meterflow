@@ -16,7 +16,8 @@ public class MeterFlowFactory : WebApplicationFactory<Program>
     public string DbPath { get; }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder) =>
-        builder.UseSetting("ConnectionStrings:MeterFlow", $"Data Source={DbPath}");
+        builder.UseSetting("ConnectionStrings:MeterFlow", $"Data Source={DbPath}")
+            .UseSetting("Cors:FrontendOrigin", "http://localhost:5173");
 
     public static void DeleteDatabase(string path)
     {
