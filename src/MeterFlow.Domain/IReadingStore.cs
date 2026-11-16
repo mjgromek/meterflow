@@ -10,4 +10,9 @@ public interface IReadingStore
 
     /// <summary>Readings for all meters with from &lt;= Moment &lt; to, unordered.</summary>
     IEnumerable<Reading> Between(DateTimeOffset from, DateTimeOffset to);
+
+    /// <summary>One summary per stored meter, ordered by Ean.</summary>
+    IEnumerable<MeterSummary> Meters();
 }
+
+public record MeterSummary(Ean Ean, int Readings, DateTimeOffset First, DateTimeOffset Last);
