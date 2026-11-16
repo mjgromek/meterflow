@@ -12,4 +12,12 @@ public class HealthTests(MeterFlowFactory factory) : IClassFixture<MeterFlowFact
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
+
+    [Fact]
+    public async Task Root_is_404()
+    {
+        var response = await factory.CreateClient().GetAsync("/");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
 }

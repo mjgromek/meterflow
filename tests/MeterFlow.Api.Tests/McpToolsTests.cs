@@ -20,13 +20,13 @@ public class McpToolsTests(MeterFlowFactory factory) : IClassFixture<MeterFlowFa
         var sent = meters
             .SelectMany((ean, i) => Faults.Inject(MeterSeries.For(ean, start, 300, rng), rng, missingChance[i], 0.01))
             .ToList();
-        // A missing reading is a gap when it lies between the meter's first and last stored reading.
+        // Every moment of the 300-moment window without a reading is a gap, edges included.
         var expected = meters
             .Select(ean =>
             {
                 var kept = sent.Where(r => r.Ean == ean).Select(r => r.Moment).ToHashSet();
                 var missing = Enumerable.Range(0, 300).Select(i => start + i * ReadingChecks.Interval)
-                    .Count(m => !kept.Contains(m) && m > kept.Min() && m < kept.Max());
+                    .Count(m => !kept.Contains(m));
                 return (Ean: ean.Value, Count: missing);
             })
             .OrderByDescending(m => m.Count)
@@ -44,6 +44,57 @@ public class McpToolsTests(MeterFlowFactory factory) : IClassFixture<MeterFlowFa
             expected,
             gaps.RootElement.EnumerateArray().Select(g => (g.GetProperty("ean").GetString()!, g.GetProperty("count").GetInt32())));
         Assert.Equal(meters.Select(m => m.Value), listed.RootElement.EnumerateArray().Select(m => m.GetProperty("ean").GetString()));
+    }
+
+    private sealed class Status500 : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancel) =>
+            Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.InternalServerError));
+    }
+
+    [Fact]
+    public async Task Tools_return_an_error_text_naming_the_api_when_it_is_unreachable()
+    {
+        // Nothing listens on port 1.
+        var tools = new MeterFlowApi(new HttpClient { BaseAddress = new Uri("http://127.0.0.1:1") });
+
+        string meters = await MeterFlowTools.ListMeters(tools, CancellationToken.None);
+
+        Assert.StartsWith("Error:", meters);
+        Assert.Contains("http://127.0.0.1:1/", meters);
+    }
+
+    private sealed class Slow : HttpMessageHandler
+    {
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancel)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(10), cancel);
+            return new HttpResponseMessage(System.Net.HttpStatusCode.OK);
+        }
+    }
+
+    [Fact]
+    public async Task Tools_return_an_error_text_naming_the_api_when_it_times_out()
+    {
+        var http = new HttpClient(new Slow()) { BaseAddress = new Uri("http://meterflow.test"), Timeout = TimeSpan.FromMilliseconds(50) };
+
+        string meters = await MeterFlowTools.ListMeters(new MeterFlowApi(http), CancellationToken.None);
+
+        Assert.StartsWith("Error:", meters);
+        Assert.Contains("http://meterflow.test/", meters);
+        Assert.Contains("did not respond in time", meters);
+    }
+
+    [Fact]
+    public async Task Tools_return_an_error_text_naming_the_api_on_a_server_error()
+    {
+        var tools = new MeterFlowApi(new HttpClient(new Status500()) { BaseAddress = new Uri("http://meterflow.test") });
+
+        string meters = await MeterFlowTools.ListMeters(tools, CancellationToken.None);
+
+        Assert.StartsWith("Error:", meters);
+        Assert.Contains("http://meterflow.test/", meters);
+        Assert.Contains("500", meters);
     }
 
     [Fact]

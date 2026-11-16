@@ -10,6 +10,25 @@ public static class ReadingChecks
             .Where(g => g.Count() > 1)
             .Select(g => g.Key);
 
+    /// <summary>Every 5-minute moment in [from, to) without a reading, per meter that has a reading in the window.</summary>
+    public static IEnumerable<(Ean Ean, DateTimeOffset Moment)> FindGaps(IEnumerable<Reading> readings, DateTimeOffset from, DateTimeOffset to)
+    {
+        long step = Interval.Ticks;
+        var first = new DateTimeOffset((from.UtcTicks + step - 1) / step * step, TimeSpan.Zero);
+        foreach (var meter in readings.Where(r => r.Moment >= from && r.Moment < to).GroupBy(r => r.Ean))
+        {
+            // DateTimeOffset equality compares the instant, so offsets do not matter here.
+            var present = meter.Select(r => r.Moment).ToHashSet();
+            for (var moment = first; moment < to; moment += Interval)
+            {
+                if (!present.Contains(moment))
+                {
+                    yield return (meter.Key, moment);
+                }
+            }
+        }
+    }
+
     public static IEnumerable<(Ean Ean, DateTimeOffset Moment)> FindGaps(IEnumerable<Reading> readings)
     {
         foreach (var meter in readings.GroupBy(r => r.Ean))

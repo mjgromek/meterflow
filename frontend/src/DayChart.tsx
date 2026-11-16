@@ -1,6 +1,8 @@
 import type { Bar } from "./day";
 
 const time = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Amsterdam", hour: "2-digit", minute: "2-digit", timeZoneName: "short" });
+const clock = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Amsterdam", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+const axisTimes = ["00:00", "06:00", "12:00", "18:00"];
 const [barWidth, gap, height] = [6, 2, 160];
 
 export function DayChart({ bars, rejected }: { bars: Bar[]; rejected: number }) {
@@ -20,14 +22,15 @@ export function DayChart({ bars, rejected }: { bars: Bar[]; rejected: number }) 
           // Flagged quarters stay visible even when nothing was measured.
           const h = Math.max(((b.kwh ?? 0) / max) * height, b.flagged ? 4 : 0);
           const label = new Date(b.start);
+          const local = clock.format(label);
           return (
             <g key={b.start}>
               <rect className={b.flagged ? "bar flagged" : "bar"} x={i * (barWidth + gap)} y={height - h} width={barWidth} height={h} rx={1}>
                 <title>{`${time.format(label)}: ${b.kwh ?? "no"} kWh, ${b.readings} readings`}</title>
               </rect>
-              {label.getUTCMinutes() === 0 && label.getUTCHours() % 6 === 0 && (
+              {axisTimes.includes(local) && (
                 <text className="axis" x={i * (barWidth + gap)} y={height + 13}>
-                  {time.format(label).slice(0, 5)}
+                  {local}
                 </text>
               )}
             </g>

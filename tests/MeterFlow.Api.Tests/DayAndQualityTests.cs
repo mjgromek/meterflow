@@ -45,7 +45,10 @@ public class DayAndQualityTests(MeterFlowFactory factory) : IClassFixture<MeterF
         Assert.Equal(
             [new(Utc("2026-10-24T22:00:00"), 0.6m, 3), new(Utc("2026-10-24T22:15:00"), null, 0), new(Utc("2026-10-24T22:30:00"), 0.4m, 1)],
             day.Quarters.Take(3));
-        Assert.Equal([Utc("2026-10-24T22:15:00"), Utc("2026-10-24T22:20:00"), Utc("2026-10-24T22:25:00")], day.Gaps);
+        // Every 5-minute moment of the 25-hour day without a stored reading, up to the day's end.
+        Assert.Equal(300 - 4, day.Gaps.Count);
+        Assert.Equal([Utc("2026-10-24T22:15:00"), Utc("2026-10-24T22:20:00"), Utc("2026-10-24T22:25:00"), Utc("2026-10-24T22:35:00")], day.Gaps.Take(4));
+        Assert.Equal(Utc("2026-10-25T22:55:00"), day.Gaps[^1]);
         Assert.Equal(
             [new(Utc("2026-10-24T22:05:00"), "Duplicate"), new(Utc("2026-10-24T22:20:00"), "NegativeKwh"), new(Utc("2026-10-24T22:25:00"), "BadFormat")],
             day.Rejected);
@@ -80,7 +83,8 @@ public class DayAndQualityTests(MeterFlowFactory factory) : IClassFixture<MeterF
 
         var quality = await factory.CreateClient().GetFromJsonAsync<List<MeterQuality>>("/quality/2026-11-01");
 
-        Assert.Equal([new(a, 3, 0, 0), new(b, 0, 1, 1), new(c, 0, 0, 0)], quality);
+        // Gaps cover the whole 288-moment day, so they include the moments after each meter's last reading.
+        Assert.Equal([new(b, 286, 1, 1), new(c, 287, 0, 0), new(a, 286, 0, 0)], quality);
     }
 
     [Fact]
