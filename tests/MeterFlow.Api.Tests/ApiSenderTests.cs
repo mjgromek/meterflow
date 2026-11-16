@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace MeterFlow.Api.Tests;
 
-public class ApiSenderTests(WebApplicationFactory<Program> factory) : IClassFixture<WebApplicationFactory<Program>>
+public class ApiSenderTests(MeterFlowFactory factory) : IClassFixture<MeterFlowFactory>
 {
     private sealed class CountingHandler : DelegatingHandler
     {

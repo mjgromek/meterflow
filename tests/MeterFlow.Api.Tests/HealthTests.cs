@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace MeterFlow.Api.Tests;
 
-public class HealthTests(WebApplicationFactory<Program> factory) : IClassFixture<WebApplicationFactory<Program>>
+public class HealthTests(MeterFlowFactory factory) : IClassFixture<MeterFlowFactory>
 {
     [Fact]
     public async Task Health_returns_200()

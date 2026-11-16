@@ -491,3 +491,8 @@ CLAUDE.md
 ROADMAP.local.md
 .claude/
 *.csv
+
+# Local SQLite databases
+*.db
+*.db-shm
+*.db-wal

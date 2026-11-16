@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace MeterFlow.Api.Tests;
 
-public class ReadingsTests(WebApplicationFactory<Program> factory) : IClassFixture<WebApplicationFactory<Program>>
+public class ReadingsTests(MeterFlowFactory factory) : IClassFixture<MeterFlowFactory>
 {
     private record Rejection(int Index, string Reason);
 
@@ -27,8 +27,17 @@ public class ReadingsTests(WebApplicationFactory<Program> factory) : IClassFixtu
         throw new InvalidOperationException();
     }
 
-    private Task<HttpResponseMessage> Post(string json) =>
-        factory.CreateClient().PostAsync("/readings", new StringContent(json, Encoding.UTF8, "application/json"));
+    private Task<HttpResponseMessage> Post(string json) => Post(factory, json);
+
+    private static Task<HttpResponseMessage> Post(WebApplicationFactory<Program> api, string json) =>
+        api.CreateClient().PostAsync("/readings", new StringContent(json, Encoding.UTF8, "application/json"));
+
+    private static List<Reading> Stored(WebApplicationFactory<Program> api, string ean)
+    {
+        using var scope = api.Services.CreateScope();
+        return scope.ServiceProvider.GetRequiredService<IReadingStore>()
+            .ForMeter(Ean.Parse(ean), DateTimeOffset.MinValue, DateTimeOffset.MaxValue).ToList();
+    }
 
     [Fact]
     public async Task Post_stores_valid_items_and_rejects_the_rest_by_index()
@@ -52,9 +61,7 @@ public class ReadingsTests(WebApplicationFactory<Program> factory) : IClassFixtu
         Assert.Equal(2, result.Accepted);
         Assert.Equal([new(1, "InvalidEan"), new(2, "NegativeKwh"), new(3, "Duplicate")], result.Rejected);
 
-        var store = factory.Services.GetRequiredService<IReadingStore>();
-        var stored = store.ForMeter(Ean.Parse(ean), DateTimeOffset.MinValue, DateTimeOffset.MaxValue);
-        Assert.Equal([0.25m, 0m], stored.Select(r => r.Kwh));
+        Assert.Equal([0.25m, 0m], Stored(factory, ean).Select(r => r.Kwh));
     }
 
     [Fact]
@@ -89,9 +96,7 @@ public class ReadingsTests(WebApplicationFactory<Program> factory) : IClassFixtu
         Assert.NotNull(result);
         Assert.Equal(1, result.Accepted);
         Assert.Equal([new(1, "BadFormat"), new(2, "BadFormat"), new(3, "BadFormat"), new(4, "BadFormat")], result.Rejected);
-        var stored = factory.Services.GetRequiredService<IReadingStore>()
-            .ForMeter(Ean.Parse(ean), DateTimeOffset.MinValue, DateTimeOffset.MaxValue);
-        Assert.Single(stored);
+        Assert.Single(Stored(factory, ean));
     }
 
     [Theory]
@@ -134,19 +139,23 @@ public class ReadingsTests(WebApplicationFactory<Program> factory) : IClassFixtu
     }
 
     [Fact]
-    public void ForMeter_returns_one_meters_readings_in_from_inclusive_to_exclusive_order()
+    public async Task Readings_survive_a_restart_on_the_same_database_file()
     {
-        var store = new InMemoryReadingStore();
-        var a = Ean.Parse(TestEan(4));
-        var b = Ean.Parse(TestEan(5));
-        var t = new DateTimeOffset(2026, 3, 2, 10, 0, 0, TimeSpan.FromHours(1));
-        store.Add(new Reading(a, t.AddMinutes(10), 3m));
-        store.Add(new Reading(a, t.AddMinutes(5), 2m));
-        store.Add(new Reading(a, t, 1m));
-        store.Add(new Reading(b, t.AddMinutes(5), 9m));
+        string ean = TestEan(4);
+        string path = Path.Combine(Path.GetTempPath(), $"meterflow-{Guid.NewGuid():N}.db");
+        try
+        {
+            using (var first = new MeterFlowFactory(path))
+            {
+                await Post(first, $$"""[{"ean":"{{ean}}","moment":"2026-03-02T10:00:00+01:00","kwh":0.25}]""");
+            }
 
-        var result = store.ForMeter(a, t, t.AddMinutes(10));
-
-        Assert.Equal([1m, 2m], result.Select(r => r.Kwh));
+            using var second = new MeterFlowFactory(path);
+            Assert.Equal([0.25m], Stored(second, ean).Select(r => r.Kwh));
+        }
+        finally
+        {
+            MeterFlowFactory.DeleteDatabase(path);
+        }
     }
 }

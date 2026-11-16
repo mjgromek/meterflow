@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace MeterFlow.Api.Tests;
 
-public class ConsumptionTests(WebApplicationFactory<Program> factory) : IClassFixture<WebApplicationFactory<Program>>
+public class ConsumptionTests(MeterFlowFactory factory) : IClassFixture<MeterFlowFactory>
 {
     private record Quarter(DateTimeOffset Start, decimal Kwh);
 

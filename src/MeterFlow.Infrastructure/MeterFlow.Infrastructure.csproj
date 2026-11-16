@@ -4,4 +4,8 @@
     <ProjectReference Include="..\MeterFlow.Domain\MeterFlow.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="11.0.0" />
+  </ItemGroup>
+
 </Project>
