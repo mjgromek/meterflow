@@ -1,6 +1,6 @@
 ﻿using MeterFlow.Simulator;
 
-var (options, error) = SimulatorArgs.Parse(args);
+var (options, error) = SimulatorArgs.Parse(args, Environment.GetEnvironmentVariable("MeterFlow__ApiBaseUrl"));
 if (options is null)
 {
     Console.Error.WriteLine($"Error: {error}");

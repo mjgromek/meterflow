@@ -49,16 +49,19 @@ dotnet test
 ## Run
 
 **API** (listens on `http://localhost:5265`, creates `meterflow.db` and applies migrations on
-startup):
+startup). `Pipeline:QueueCapacity` (default 10,000; env `Pipeline__QueueCapacity`) bounds the
+reading queue; a POST waits while it is full.
 
 ```sh
 dotnet run --project src/MeterFlow.Api
 ```
 
-**Simulator**: arguments are meters, days, and either `--api <url>` or a CSV path.
+**Simulator**: arguments are meters, days, and either `--api <url>` or a CSV path. Without
+`--api`, the environment variable `MeterFlow__ApiBaseUrl` selects the API instead of CSV.
 
 ```sh
 dotnet run --project src/MeterFlow.Simulator -- 3 2 --api http://localhost:5265
+MeterFlow__ApiBaseUrl=http://localhost:5265 dotnet run --project src/MeterFlow.Simulator -- 3 2
 dotnet run --project src/MeterFlow.Simulator -- 3 1 readings.csv
 ```
 
@@ -97,7 +100,7 @@ cd frontend && npm ci && npm run dev
 ```
 
 Open `http://localhost:5173`, pick a meter and a day. Quarters with fewer than three readings
-or a rejected reading are highlighted. `npm test` runs the Vitest suite, `npm run build`
+and quarters with a rejected reading are highlighted in two colours; rejected wins when both apply. `npm test` runs the Vitest suite, `npm run build`
 type-checks and bundles.
 
 **OpenAPI contract**: `dotnet build` writes the API's OpenAPI document to

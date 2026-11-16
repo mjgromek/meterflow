@@ -25,7 +25,7 @@ export function DayChart({ bars, rejected }: { bars: Bar[]; rejected: number }) 
           const local = clock.format(label);
           return (
             <g key={b.start}>
-              <rect className={b.flagged ? "bar flagged" : "bar"} x={i * (barWidth + gap)} y={height - h} width={barWidth} height={h} rx={1}>
+              <rect className={b.rejected ? "bar flagged rejected" : b.flagged ? "bar flagged missing" : "bar"} x={i * (barWidth + gap)} y={height - h} width={barWidth} height={h} rx={1}>
                 <title>{`${time.format(label)}: ${b.kwh ?? "no"} kWh, ${b.readings} readings`}</title>
               </rect>
               {axisTimes.includes(local) && (
@@ -41,7 +41,8 @@ export function DayChart({ bars, rejected }: { bars: Bar[]; rejected: number }) 
       <figcaption id="day-summary">{summary}</figcaption>
       <ul className="legend">
         <li><span className="swatch" /> Complete quarter (3 readings)</li>
-        <li><span className="swatch flagged" /> Missing or rejected readings</li>
+        <li><span className="swatch missing" /> Missing readings</li>
+        <li><span className="swatch rejected" /> Rejected reading</li>
       </ul>
     </figure>
   );

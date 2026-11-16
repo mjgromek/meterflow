@@ -21,7 +21,7 @@ if (frontendOrigin is not null)
 {
     builder.Services.AddCors(o => o.AddPolicy("frontend", p => p.WithOrigins(frontendOrigin).WithMethods("GET")));
 }
-var queue = Channel.CreateBounded<Reading>(new BoundedChannelOptions(10_000) { FullMode = BoundedChannelFullMode.Wait, SingleReader = true });
+var queue = Channel.CreateBounded<Reading>(new BoundedChannelOptions(builder.Configuration.GetValue("Pipeline:QueueCapacity", 10_000)) { FullMode = BoundedChannelFullMode.Wait, SingleReader = true });
 builder.Services.AddSingleton(queue.Reader);
 builder.Services.AddSingleton(queue.Writer);
 builder.Services.AddHostedService<ReadingProcessor>();

@@ -23,4 +23,15 @@ describe("toBars", () => {
 
     expect(flagged).toEqual([9, 14]);
   });
+
+  it("marks a quarter with a rejection as rejected even when readings are also missing", () => {
+    const day = longDay();
+    day.quarters[9] = { ...day.quarters[9], readings: 2, kwh: 0.1 };
+    day.quarters[14] = { ...day.quarters[14], readings: 2, kwh: 0.1 };
+    day.rejected = [{ moment: "2026-10-25T02:35:00+01:00", reason: "NegativeKwh" }];
+
+    const bars = toBars(day);
+
+    expect([bars[9].rejected, bars[14].rejected]).toEqual([false, true]);
+  });
 });
