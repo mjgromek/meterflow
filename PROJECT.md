@@ -28,6 +28,8 @@ MCP client answering consumption questions through the API.
 ## Non-goals
 
 - Real meter protocols, authentication, multi-tenant use, production hosting.
+- Time zones other than Europe/Amsterdam (QuarterHours assumes 15-minute offsets).
+- Streaming exports for days above ~1M rows; a day is built in memory.
 
 ## Invariants
 
