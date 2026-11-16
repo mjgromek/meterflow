@@ -59,7 +59,7 @@ formatting, file I/O, command-line arguments.
 
 Done when: it writes a CSV that is indistinguishable in shape from real meter output.
 
-## [ ] M3. Validation and aggregation
+## [x] M3. Validation and aggregation
 Read the CSV, detect duplicates, gaps, negative values and invalid EANs. Aggregate
 5-minute readings into 15-minute intervals.
 
