@@ -35,4 +35,12 @@ public class SqliteReadingStore(MeterFlowDbContext db) : IReadingStore
         db.Readings.AsNoTracking()
             .Where(r => r.Moment >= from && r.Moment < to)
             .ToList();
+
+    public IEnumerable<MeterSummary> Meters() =>
+        db.Readings
+            .GroupBy(r => r.Ean)
+            .Select(g => new MeterSummary(g.Key, g.Count(), g.Min(r => r.Moment), g.Max(r => r.Moment)))
+            .AsEnumerable()
+            .OrderBy(m => m.Ean.Value, StringComparer.Ordinal)
+            .ToList();
 }

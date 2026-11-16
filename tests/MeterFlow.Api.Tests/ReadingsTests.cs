@@ -189,6 +189,8 @@ public class ReadingsTests(MeterFlowFactory factory) : IClassFixture<MeterFlowFa
         public IEnumerable<Reading> ForMeter(Ean ean, DateTimeOffset from, DateTimeOffset to) => inner.ForMeter(ean, from, to);
 
         public IEnumerable<Reading> Between(DateTimeOffset from, DateTimeOffset to) => inner.Between(from, to);
+
+        public IEnumerable<MeterSummary> Meters() => inner.Meters();
     }
 
     [Fact]

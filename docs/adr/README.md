@@ -21,3 +21,4 @@ a new record that supersedes the old one; old records are not rewritten.
 | [14](0014-background-processing-with-channel.md) | Readings are stored by a background service fed by a bounded channel | M6 |
 | [15](0015-drain-on-shutdown.md) | Queued readings are drained on shutdown | M6 |
 | [16](0016-parquet-export-per-local-day.md) | Quarter-hour export as Parquet per local day, Hive-style paths | M7 |
+| [17](0017-read-only-mcp-server-over-the-api.md) | A read-only MCP server that goes through the REST API | M8 |

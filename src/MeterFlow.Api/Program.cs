@@ -34,6 +34,22 @@ app.MapGet("/meters/{ean}/consumption", (string ean, string? from, string? to, I
             .Select(q => new Quarter(q.Start, q.Kwh)))
         : Results.BadRequest());
 
+app.MapGet("/meters", (IReadingStore store) =>
+    store.Meters().Select(m => new MeterRow(m.Ean.Value, m.Readings, m.First, m.Last)));
+
+app.MapGet("/gaps", (string? from, string? to, IReadingStore store) =>
+    TryParseMoment(from, out var start) && TryParseMoment(to, out var end) && start < end
+        ? Results.Ok(store.Between(start, end)
+            .GroupBy(r => r.Ean)
+            .Select(meter =>
+            {
+                var moments = ReadingChecks.FindGaps(meter).Select(g => g.Moment).ToList();
+                return new MeterGaps(meter.Key.Value, moments.Count, moments);
+            })
+            .OrderByDescending(g => g.Count)
+            .ThenBy(g => g.Ean, StringComparer.Ordinal))
+        : Results.BadRequest());
+
 app.MapPost("/exports/{date}", async (string date, IReadingStore store, IConfiguration config, CancellationToken cancel) =>
 {
     if (!DateOnly.TryParseExact(date, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var day))
@@ -86,3 +102,7 @@ record PostReadingsResult(int Accepted, IReadOnlyList<Rejection> Rejected);
 record Quarter(DateTimeOffset Start, decimal Kwh);
 
 record ExportResult(string Path, int Rows);
+
+record MeterRow(string Ean, int Readings, DateTimeOffset First, DateTimeOffset Last);
+
+record MeterGaps(string Ean, int Count, IReadOnlyList<DateTimeOffset> Moments);

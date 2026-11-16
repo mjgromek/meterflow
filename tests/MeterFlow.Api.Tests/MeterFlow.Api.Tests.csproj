@@ -20,6 +20,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\MeterFlow.Api\MeterFlow.Api.csproj" />
     <ProjectReference Include="..\..\src\MeterFlow.Simulator\MeterFlow.Simulator.csproj" />
+    <ProjectReference Include="..\..\src\MeterFlow.Mcp\MeterFlow.Mcp.csproj" />
   </ItemGroup>
 
 </Project>
