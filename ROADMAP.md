@@ -138,7 +138,7 @@ local day, stricter CSV input, crash-safe exports, clear errors when the API is 
 
 Done when: each item has a test, CI is green, and a full review pass finds no P0 or P1.
 
-## [ ] M12. Dashboard polish
+## [x] M12. Dashboard polish
 A dashboard that works with hundreds of meters: searchable meter list with issue badges,
 day navigation, summary figures, a chart with hover details and animated transitions, and
 a quality table that selects a meter on click. No new runtime dependencies.
