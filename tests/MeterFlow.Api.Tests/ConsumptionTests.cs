@@ -28,6 +28,7 @@ public class ConsumptionTests(MeterFlowFactory factory) : IClassFixture<MeterFlo
             """;
         var client = factory.CreateClient();
         await client.PostAsync("/readings", new StringContent(json, Encoding.UTF8, "application/json"));
+        await ReadingsTests.WaitUntilStored(factory, ean, 5);
 
         var response = await Get(ean, "2026-03-02T10:00:00+01:00", "2026-03-02T09:30:00Z");
 

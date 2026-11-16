@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json.Serialization;
+using System.Threading.Channels;
 using MeterFlow.Domain;
 using MeterFlow.Infrastructure;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +9,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<MeterFlowDbContext>(o => o.UseSqlite(builder.Configuration.GetConnectionString("MeterFlow")));
 builder.Services.AddScoped<IReadingStore, SqliteReadingStore>();
 builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.NumberHandling = JsonNumberHandling.Strict);
+var queue = Channel.CreateBounded<Reading>(new BoundedChannelOptions(10_000) { FullMode = BoundedChannelFullMode.Wait, SingleReader = true });
+builder.Services.AddSingleton(queue.Reader);
+builder.Services.AddSingleton(queue.Writer);
+builder.Services.AddHostedService<ReadingProcessor>();
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -29,32 +34,33 @@ app.MapGet("/meters/{ean}/consumption", (string ean, string? from, string? to, I
             .Select(q => new Quarter(q.Start, q.Kwh)))
         : Results.BadRequest());
 
-app.MapPost("/readings", (ReadingItem?[] items, IReadingStore store, ILogger<Program> logger) =>
+app.MapPost("/readings", async (ReadingItem?[] items, ChannelWriter<Reading> queue, ILogger<Program> logger, CancellationToken cancel) =>
 {
     int accepted = 0;
     List<Rejection> rejected = [];
     for (int i = 0; i < items.Length; i++)
     {
-        var item = items[i];
-        RejectReason? reason =
-            item is not { Ean: { } text, Moment: { } momentText, Kwh: { } kwh }
-            || !TryParseMoment(momentText, out var moment)
-                ? RejectReason.BadFormat
-            : !Ean.TryParse(text, out var ean) ? RejectReason.InvalidEan
-            : kwh < 0 ? RejectReason.NegativeKwh
-            : !store.Add(new Reading(ean, moment, kwh)) ? RejectReason.Duplicate
-            : null;
-        if (reason is null)
+        if (items[i] is not { Ean: { } text, Moment: { } momentText, Kwh: { } kwh } || !TryParseMoment(momentText, out var moment))
         {
-            accepted++;
+            rejected.Add(new Rejection(i, nameof(RejectReason.BadFormat)));
+        }
+        else if (!Ean.TryParse(text, out var ean))
+        {
+            rejected.Add(new Rejection(i, nameof(RejectReason.InvalidEan)));
+        }
+        else if (kwh < 0)
+        {
+            rejected.Add(new Rejection(i, nameof(RejectReason.NegativeKwh)));
         }
         else
         {
-            rejected.Add(new Rejection(i, reason.Value.ToString()));
+            // Waits while the queue is full; duplicates are detected later, when stored.
+            await queue.WriteAsync(new Reading(ean, moment, kwh), cancel);
+            accepted++;
         }
     }
     logger.LogInformation("POST /readings: {Accepted} accepted, {Rejected} rejected", accepted, rejected.Count);
-    return new PostReadingsResult(accepted, rejected);
+    return Results.Accepted(value: new PostReadingsResult(accepted, rejected));
 });
 
 app.Run();
