@@ -34,3 +34,15 @@ Why: Flooring the instant keeps the repeated 02:00 on 2026-10-25 as two quarters
      `ForLocalDay` steps 15 minutes from local midnight to the next one, using the zone's offset.
 Rules out: Flooring local wall-clock times; zones with non-15-minute offsets (UTC floor misaligns).
 Level: 1.
+
+## 2026-11-16 — API tests run in-process with Microsoft.AspNetCore.Mvc.Testing
+What: The API test project adds Microsoft.AspNetCore.Mvc.Testing (WebApplicationFactory).
+Why: Tests call the real pipeline through an in-memory HttpClient, no port, no process start.
+     Without it, each test would launch `dotnet run`, wait on a port and kill it: slower, flaky.
+Rules out: Spawning the API process from unit tests. Level: 2, approved by the human.
+
+## 2026-11-16 — Architecture decisions are published as ADRs in docs/adr
+What: One numbered ADR per architecture decision, with its milestone; index in docs/adr/README.md.
+Why: DECISIONS.md is pipeline state; the ADRs are the public, durable record per milestone.
+Rules out: Rewriting an old ADR; a changed decision gets a new ADR that supersedes it.
+Level: 1, requested by the human.
