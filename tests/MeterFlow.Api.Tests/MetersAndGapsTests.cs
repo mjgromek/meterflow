@@ -40,8 +40,10 @@ public class MetersAndGapsTests(MeterFlowFactory factory) : IClassFixture<MeterF
             [new(a, 3, At("10:00:00"), At("11:00:00")), new(b, 3, At("10:00:00"), At("10:20:00")), new(c, 2, At("10:00:00"), At("11:00:00"))],
             meters);
         Assert.NotNull(gaps);
-        Assert.Equal([(b, 2), (a, 1), (c, 0)], gaps.Select(g => (g.Ean, g.Count)));
-        Assert.Equal([At("10:10:00"), At("10:15:00")], gaps[0].Moments);
+        // The window [10:00Z, 11:00Z) has 12 moments; gaps after a meter's last reading count too.
+        Assert.Equal([(c, 11), (a, 10), (b, 9)], gaps.Select(g => (g.Ean, g.Count)));
+        Assert.Equal([At("10:10:00"), At("10:15:00"), At("10:25:00")], gaps[2].Moments.Take(3));
+        Assert.Equal(At("10:55:00"), gaps[0].Moments[^1]);
     }
 
     [Theory]

@@ -1,6 +1,6 @@
 # 21. Attributable rejections are stored; the API serves whole local days
 
-Status: Accepted · Milestone: M10
+Status: Accepted, amended by [22](0022-hardening.md) · Milestone: M10
 
 ## Context
 The dashboard highlights gaps and invalid readings per meter and ranks meters by

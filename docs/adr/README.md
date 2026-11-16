@@ -26,3 +26,4 @@ a new record that supersedes the old one; old records are not rewritten.
 | [19](0019-cors-for-the-dev-frontend-only.md) | CORS allows only the configured frontend origin, GET only | M10 |
 | [20](0020-openapi-contract-and-generated-client.md) | The OpenAPI document is the contract; frontend types are generated from it | M10 |
 | [21](0021-rejections-stored-and-local-day-endpoint.md) | Attributable rejections are stored; the API serves whole local days | M10 |
+| [22](0022-hardening.md) | Gaps over a whole window, crash-safe exports, clear errors at the edges | M11 |

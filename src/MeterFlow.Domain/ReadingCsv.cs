@@ -11,15 +11,18 @@ public record ReadingCsvResult(IReadOnlyList<Reading> Readings, IReadOnlyList<Re
 /// <summary>Reads the "ean,moment,kwh" format CsvExport writes. Bad rows are reported, never thrown.</summary>
 public static class ReadingCsv
 {
+    private const string Header = "ean,moment,kwh";
+
     public static ReadingCsvResult Parse(IEnumerable<string> lines)
     {
         List<Reading> readings = [];
         List<RejectedRow> rejected = [];
         int lineNumber = 0;
-        foreach (var line in lines)
+        foreach (var raw in lines)
         {
             lineNumber++;
-            if (lineNumber == 1)
+            var line = raw.TrimEnd('\r');
+            if (lineNumber == 1 && line == Header)
             {
                 continue;
             }

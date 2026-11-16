@@ -7,47 +7,32 @@ email), so pre-2026-11-16 hashes from conversations no longer resolve.
 
 ## Current slice
 
-None. M10 complete (CI green: build, docker, frontend; 99 .NET + 7 frontend tests),
-auto-approved. All roadmap milestones done.
+None. M11 complete: checker PASS over M6, M7, M10, M11 (real run incl. SIGINT drain,
+CORS, export, MCP and simulator error paths); its three code P2s fixed; 115 .NET + 9
+frontend tests. Auto-approved.
 
-## Acceptance criteria (M10 S1, API)
+## Acceptance criteria (M11)
 
-- Rejections that name a valid EAN (NegativeKwh, BadFormat with a valid ean) are stored
-  with ean, moment if parseable, reason, received time. Duplicates found by the processor are
-  stored the same way with reason Duplicate. Invalid-EAN items cannot be attributed and are
-  only counted in the POST response, as now.
-- `GET /meters/{ean}/days/{yyyy-MM-dd}`: the Europe/Amsterdam local day as
-  {quarters: [{start, kwh|null, readings}] for every QuarterHours.ForLocalDay start (92/96/
-  100), gaps: [moment], rejected: [{moment|null, reason}]}. Bad ean/date: 400.
-- `GET /quality/{yyyy-MM-dd}`: per meter {ean, gaps, rejected, duplicates} for that local
-  day, ordered by gaps+rejected+duplicates desc.
-- OpenAPI: Microsoft.AspNetCore.OpenApi (`AddOpenApi`, `MapOpenApi` at /openapi/v1.json).
-  Endpoints return typed results so every response schema comes from the C# records. The
-  document is also generated at build time (Microsoft.Extensions.ApiDescription.Server) into
-  `frontend/openapi/MeterFlow.Api.json`, committed.
-- CORS: one named policy allowing only the origin in `Cors:FrontendOrigin`
-  (appsettings.Development.json: http://localhost:5173), GET only; no wildcard. Absent
-  setting: no CORS. Tests: preflight from 5173 gets the header; another origin does not.
+- Gaps over a window: `ReadingChecks.FindGaps(readings, from, to)` reports every missing
+  5-minute moment in [from, to) per meter that has readings in the window, including at the
+  window edges. `/gaps`, the day endpoint and `/quality` use it. Existing FindGaps behaviour
+  stays for callers without a window.
+- `ReadingCsv.Parse`: a trailing '\r' on any line is ignored; line 1 must equal the header
+  `ean,moment,kwh`, otherwise it is parsed as a data row (so a headerless file loses nothing).
+- Export: written to a temp file in the same folder, then `File.Move(overwrite: true)`; a
+  per-day lock (or a single semaphore) stops two exports of the same day racing.
+- Simulator: `--api` without a URL or with an invalid URL prints a usage message and exits
+  with code 1; an unreachable API or a failed batch prints one clear error line and exits 1
+  instead of a stack trace. Argument parsing is a testable function.
+- MCP tools: API unreachable or 5xx returns an "Error: ..." text naming the base URL,
+  instead of an unhandled exception.
+- `GET /` returns 404 (test).
+- Dashboard: x-axis labels at local 00:00, 06:00, 12:00 and 18:00 (by the quarter's local
+  start), so a DST day still shows those four labels at the right bars. Frontend test for
+  the 100- and 92-quarter days.
 
-## Acceptance criteria (M10 S2, frontend)
-
-- `frontend/`: Vite + React + TypeScript. TS types generated from
-  frontend/openapi/MeterFlow.Api.json with openapi-typescript; calls via openapi-fetch.
-  API base URL from VITE_API_URL (default http://localhost:5265).
-- One page: meter select (GET /meters), date input (default 2026-10-25), an SVG bar chart of
-  the day's quarters (all 92/96/100), quarters with gaps or rejections highlighted, a
-  legend, and a table of the 10 meters with most issues (GET /quality/{date}). Accessible:
-  labels, table semantics, chart has a text summary.
-- Frontend tests with Vitest + React Testing Library (jsdom), API calls mocked at the fetch
-  level, covering: the data-mapping function (DST day gives 100 bars, 92 on 2026-03-29;
-  gaps and rejections mark the right quarters); the page renders a meter list, the chart
-  with the right number of bars and an accessible text summary, highlighted quarters, and
-  the quality table ordered as returned; changing meter or date refetches; an API error
-  shows a message instead of crashing; an empty day shows an empty state.
-  `npm test` runs them; `npm run build` type-checks.
-- CI: a frontend job: dotnet build regenerates the OpenAPI document and fails if it differs
-  from the committed one; then npm ci, generate types, test, build.
-- README architecture diagram and run instructions updated.
+Deliberately not in scope (stay in backlog): other time zones, exports of more than ~1M
+rows per day, a backpressure test, the simulator reading its URL from configuration.
 
 ## Shipped in M3
 

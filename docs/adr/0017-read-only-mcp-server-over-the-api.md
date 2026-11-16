@@ -1,6 +1,6 @@
 # 17. A read-only MCP server that goes through the REST API
 
-Status: Accepted · Milestone: M8
+Status: Accepted, amended by [22](0022-hardening.md) · Milestone: M8
 
 ## Context
 An AI agent should answer questions such as "which meter had the most gaps yesterday?"

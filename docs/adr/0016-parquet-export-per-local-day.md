@@ -1,6 +1,6 @@
 # 16. Quarter-hour export as Parquet per local day, Hive-style paths
 
-Status: Accepted · Milestone: M7
+Status: Accepted, amended by [22](0022-hardening.md) · Milestone: M7
 
 ## Context
 Analytics tools need the 15-minute values outside the API, as files that a query engine

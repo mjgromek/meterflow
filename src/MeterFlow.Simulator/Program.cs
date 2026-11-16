@@ -1,19 +1,15 @@
 ﻿using MeterFlow.Simulator;
 
-// "--api <url>" may appear anywhere; the rest stay positional.
-int apiAt = Array.IndexOf(args, "--api");
-string? api = null;
-if (apiAt >= 0)
+var (options, error) = SimulatorArgs.Parse(args);
+if (options is null)
 {
-    api = apiAt + 1 < args.Length ? args[apiAt + 1] : throw new ArgumentException("--api needs a URL.");
-    args = [.. args[..apiAt], .. args[(apiAt + 2)..]];
+    Console.Error.WriteLine($"Error: {error}");
+    Console.Error.WriteLine(SimulatorArgs.Usage);
+    return 1;
 }
+var (meters, days, path, api) = options;
 
-int meters = args.Length > 0 ? int.Parse(args[0]) : 3;
-int days = args.Length > 1 ? int.Parse(args[1]) : 1;
-string path = args.Length > 2 ? args[2] : "readings.csv";
-
-// ponytail: UTC timestamps, so the profile peaks at 18:00 UTC; local-time shaping belongs to M3.
+// UTC moments, so the profile peaks at 18:00 UTC.
 var start = new DateTimeOffset(DateTime.UtcNow.Date.AddDays(-days), TimeSpan.Zero);
 var rng = new Random(42);
 
@@ -22,12 +18,29 @@ var readings = Enumerable.Range(0, meters).SelectMany(i =>
 
 if (api is not null)
 {
-    using var client = new HttpClient { BaseAddress = new Uri(api) };
-    var (accepted, rejected) = await ApiSender.SendAsync(client, readings, batchSize: 500);
-    Console.WriteLine($"Sent {meters} meters x {days} days to {api}: {accepted} accepted, {rejected} rejected");
-    return;
+    using var client = new HttpClient { BaseAddress = api };
+    try
+    {
+        var (accepted, rejected) = await ApiSender.SendAsync(client, readings, batchSize: 500);
+        Console.WriteLine($"Sent {meters} meters x {days} days to {api}: {accepted} accepted, {rejected} rejected");
+        return 0;
+    }
+    catch (Exception e) when (e is HttpRequestException or TaskCanceledException)
+    {
+        Console.Error.WriteLine($"Error: sending readings to {api} failed: {e.Message}");
+        return 1;
+    }
 }
 
-using var writer = File.CreateText(path);
-CsvExport.Write(writer, readings);
+try
+{
+    using var writer = File.CreateText(path);
+    CsvExport.Write(writer, readings);
+}
+catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+{
+    Console.Error.WriteLine($"Error: writing {path} failed: {e.Message}");
+    return 1;
+}
 Console.WriteLine($"Wrote {meters} meters x {days} days to {path}");
+return 0;

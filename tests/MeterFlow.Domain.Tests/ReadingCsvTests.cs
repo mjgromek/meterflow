@@ -47,6 +47,24 @@ public class ReadingCsvTests
     }
 
     [Fact]
+    public void Windows_line_endings_are_ignored()
+    {
+        var result = ReadingCsv.Parse([Header + "\r", GoodRow + "\r", "garbage\r"]);
+
+        Assert.Single(result.Readings);
+        Assert.Equal([new RejectedRow(3, RejectReason.BadFormat)], result.Rejected);
+    }
+
+    [Fact]
+    public void A_file_without_a_header_keeps_its_first_row()
+    {
+        var result = ReadingCsv.Parse([GoodRow, "garbage"]);
+
+        Assert.Single(result.Readings);
+        Assert.Equal([new RejectedRow(2, RejectReason.BadFormat)], result.Rejected);
+    }
+
+    [Fact]
     public void Good_rows_after_a_bad_row_are_still_returned()
     {
         var result = ReadingCsv.Parse([Header, "garbage", GoodRow]);

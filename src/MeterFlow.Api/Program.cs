@@ -71,8 +71,7 @@ app.MapGet("/meters/{ean}/days/{date}", Results<Ok<MeterDay>, BadRequest> (strin
     var byQuarter = readings.ToLookup(r => (int)((r.Moment - from) / QuarterHours.Length));
     var quarters = starts.Select((start, i) => new DayQuarter(
         start.ToUniversalTime(), byQuarter[i].Any() ? byQuarter[i].Sum(r => r.Kwh) : null, byQuarter[i].Count()));
-    // shortcut: gaps only between the day's first and last reading, not at the day edges; see backlog.
-    var gaps = ReadingChecks.FindGaps(readings).Select(g => g.Moment);
+    var gaps = ReadingChecks.FindGaps(readings, from, to).Select(g => g.Moment);
     var rejected = store.RejectionsBetween(from, to)
         .Where(r => r.Ean == meter)
         .OrderBy(r => r.Moment)
@@ -89,7 +88,7 @@ app.MapGet("/quality/{date}", Results<Ok<IEnumerable<MeterQuality>>, BadRequest>
     var starts = QuarterHours.ForLocalDay(day, amsterdam).ToList();
     var (from, to) = (starts[0], starts[^1] + QuarterHours.Length);
     var readings = store.Between(from, to).ToList();
-    var gaps = ReadingChecks.FindGaps(readings).CountBy(g => g.Ean).ToDictionary();
+    var gaps = ReadingChecks.FindGaps(readings, from, to).CountBy(g => g.Ean).ToDictionary();
     var rejections = store.RejectionsBetween(from, to).ToList();
     return TypedResults.Ok<IEnumerable<MeterQuality>>(readings.Select(r => r.Ean).Concat(rejections.Select(r => r.Ean)).Distinct()
         .Select(ean => new MeterQuality(
@@ -110,7 +109,7 @@ app.MapGet("/gaps", Results<Ok<IEnumerable<MeterGaps>>, BadRequest> (string? fro
             .GroupBy(r => r.Ean)
             .Select(meter =>
             {
-                var moments = ReadingChecks.FindGaps(meter).Select(g => g.Moment).ToList();
+                var moments = ReadingChecks.FindGaps(meter, start, end).Select(g => g.Moment).ToList();
                 return new MeterGaps(meter.Key.Value, moments.Count, moments);
             })
             .OrderByDescending(g => g.Count)

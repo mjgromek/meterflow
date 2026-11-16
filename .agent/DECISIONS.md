@@ -85,3 +85,10 @@ What: Build-time OpenAPI document committed; openapi-typescript types; CORS GET 
 Why: Frontend types follow the C# records, checked in CI; no wildcard origins. ADR 19-21.
 Rules out: Hand-written TS types; AllowAnyOrigin; DST logic in the browser.
 Level: 1, autopilot.
+
+## 2026-11-16 — Hardening: window gaps, crash-safe exports, clear edge errors
+What: FindGaps over a window; export read+write under one lock via temp file and move;
+     MCP and simulator report API and file failures as one clear error.
+Why: Review of M6-M10 found edge cases that were silent or crashed. See ADR 22.
+Rules out: Per-day export lock table; retries in the simulator.
+Level: 1, autopilot.

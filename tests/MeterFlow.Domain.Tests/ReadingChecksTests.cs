@@ -64,6 +64,33 @@ public class ReadingChecksTests
     }
 
     [Fact]
+    public void A_window_reports_missing_moments_at_its_edges_only_for_meters_with_readings_in_it()
+    {
+        Ean other = Ean.Parse("000000000000000000");
+        Reading[] readings =
+        [
+            new(Meter, Moment.AddMinutes(5), 1m),
+            new(Meter, Moment.AddMinutes(15), 1m),
+            new(Meter, Moment.AddMinutes(-5), 1m),
+            new(other, Moment.AddMinutes(25), 1m),
+        ];
+
+        Assert.Equal(
+            [(Meter, Moment), (Meter, Moment.AddMinutes(10)), (Meter, Moment.AddMinutes(20))],
+            ReadingChecks.FindGaps(readings, Moment, Moment.AddMinutes(25)));
+    }
+
+    [Fact]
+    public void A_window_starting_between_moments_checks_the_5_minute_grid_from_the_next_moment()
+    {
+        Reading[] readings = [new(Meter, Moment.AddMinutes(5), 1m)];
+
+        Assert.Equal(
+            [(Meter, Moment.AddMinutes(10))],
+            ReadingChecks.FindGaps(readings, Moment.AddMinutes(2), Moment.AddMinutes(15)));
+    }
+
+    [Fact]
     public void The_repeated_hour_at_the_end_of_summer_time_is_not_a_gap()
     {
         Reading[] readings =
