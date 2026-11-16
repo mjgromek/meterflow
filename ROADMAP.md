@@ -130,3 +130,10 @@ the contract, a TypeScript client generated from it so frontend types follow the
 the frontend build in GitHub Actions, the README architecture diagram updated.
 
 Done when: the dashboard shows a DST day correctly from a running API, and CI builds both.
+
+## [ ] M11. Hardening
+Close the known gaps found while building M3 to M10: complete gap detection across a whole
+local day, stricter CSV input, crash-safe exports, clear errors when the API is unreachable
+(simulator and MCP tools), and evenly spaced chart labels.
+
+Done when: each item has a test, CI is green, and a full review pass finds no P0 or P1.
