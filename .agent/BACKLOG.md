@@ -37,3 +37,8 @@ Format:
   constant. Urgent when: clients rely on the full-queue behaviour or capacity is tuned.
 - `RejectReason.Duplicate` is no longer produced by the API (duplicates are logged by the
   processor). Urgent when: a client asks for per-reading storage confirmation.
+- Export writes the final path directly (a crash leaves a partial file) and two concurrent
+  exports of one day race. Urgent when: exports are triggered concurrently or read while
+  being written. Fix: write to a temp file and File.Move(overwrite: true).
+- Export builds the whole day in memory inside the request. Urgent when: a day exceeds ~1M
+  rows or the request times out.
