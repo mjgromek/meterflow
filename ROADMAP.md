@@ -119,3 +119,14 @@ with `WebApplicationFactory`, and a README covering the architecture.
 Scope: CI for .NET, multi-stage Docker builds, in-process testing of a whole app.
 
 Done when: CI is green and the README documents the design decisions.
+
+## [ ] M10. Dashboard
+A React + TypeScript single-page dashboard (Vite) in `frontend/`, reading only through the
+API. Select a meter, see its 15-minute consumption for a chosen day with gaps and invalid
+readings highlighted, and a table of the meters with the most data-quality issues.
+
+Scope: CORS limited to the dev frontend origin (no wildcard), the API's OpenAPI document as
+the contract, a TypeScript client generated from it so frontend types follow the C# records,
+the frontend build in GitHub Actions, the README architecture diagram updated.
+
+Done when: the dashboard shows a DST day correctly from a running API, and CI builds both.
