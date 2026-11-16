@@ -2,7 +2,7 @@ using System.Globalization;
 
 namespace MeterFlow.Domain;
 
-public enum RejectReason { BadFormat, InvalidEan, NegativeKwh }
+public enum RejectReason { BadFormat, InvalidEan, NegativeKwh, Duplicate }
 
 public record RejectedRow(int LineNumber, RejectReason Reason);
 
