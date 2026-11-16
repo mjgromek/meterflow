@@ -14,7 +14,7 @@ partial class MeterFlowDbContextModelSnapshot : ModelSnapshot
     // If you encounter a merge conflict in the line below, it means you need to
     // discard one of the migration branches and recreate its migrations on top of
     // the other branch. See https://aka.ms/efcore-docs-migrations-conflicts for more info.
-    public override string LastMigrationId => "20261116192955_MomentIndex";
+    public override string LastMigrationId => "20261116202026_Rejections";
 
     protected override void BuildModel(ModelBuilder modelBuilder)
     {
@@ -39,6 +39,34 @@ partial class MeterFlowDbContextModelSnapshot : ModelSnapshot
                 b.HasIndex("Moment");
 
                 b.ToTable("Readings");
+            });
+
+        modelBuilder.Entity("MeterFlow.Domain.Rejection", b =>
+            {
+                b.Property<int>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("INTEGER");
+
+                b.Property<string>("Ean")
+                    .IsRequired()
+                    .HasMaxLength(18)
+                    .HasColumnType("TEXT");
+
+                b.Property<long?>("Moment")
+                    .HasColumnType("INTEGER")
+                    .HasColumnName("MomentUtcTicks");
+
+                b.Property<string>("Reason")
+                    .IsRequired()
+                    .HasColumnType("TEXT");
+
+                b.Property<long>("ReceivedAt")
+                    .HasColumnType("INTEGER")
+                    .HasColumnName("ReceivedAtUtcTicks");
+
+                b.HasKey("Id");
+
+                b.ToTable("Rejections");
             });
 #pragma warning restore 612, 618
     }

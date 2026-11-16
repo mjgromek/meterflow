@@ -23,3 +23,6 @@ a new record that supersedes the old one; old records are not rewritten.
 | [16](0016-parquet-export-per-local-day.md) | Quarter-hour export as Parquet per local day, Hive-style paths | M7 |
 | [17](0017-read-only-mcp-server-over-the-api.md) | A read-only MCP server that goes through the REST API | M8 |
 | [18](0018-ci-and-container.md) | CI on GitHub Actions; the API ships as a non-root container | M9 |
+| [19](0019-cors-for-the-dev-frontend-only.md) | CORS allows only the configured frontend origin, GET only | M10 |
+| [20](0020-openapi-contract-and-generated-client.md) | The OpenAPI document is the contract; frontend types are generated from it | M10 |
+| [21](0021-rejections-stored-and-local-day-endpoint.md) | Attributable rejections are stored; the API serves whole local days | M10 |

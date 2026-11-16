@@ -120,7 +120,7 @@ Scope: CI for .NET, multi-stage Docker builds, in-process testing of a whole app
 
 Done when: CI is green and the README documents the design decisions.
 
-## [ ] M10. Dashboard
+## [x] M10. Dashboard
 A React + TypeScript single-page dashboard (Vite) in `frontend/`, reading only through the
 API. Select a meter, see its 15-minute consumption for a chosen day with gaps and invalid
 readings highlighted, and a table of the meters with the most data-quality issues.

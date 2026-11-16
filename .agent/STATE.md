@@ -7,23 +7,47 @@ email), so pre-2026-11-16 hashes from conversations no longer resolve.
 
 ## Current slice
 
-None. M9 complete (CI green on GitHub incl. container smoke test), auto-approved.
-Next: M10.
+None. M10 complete (CI green: build, docker, frontend; 99 .NET + 7 frontend tests),
+auto-approved. All roadmap milestones done.
 
-## Acceptance criteria (M9)
+## Acceptance criteria (M10 S1, API)
 
-- `.github/workflows/ci.yml`: on push and pull_request; ubuntu-latest; actions/setup-dotnet
-  with the .NET 11 SDK (global.json pins the SDK if needed for CI to match); `dotnet tool
-  restore`, `dotnet build`, `dotnet test`. No secrets.
-- `src/MeterFlow.Api/Dockerfile` (or at repo root): multi-stage, sdk:11.0 build/publish, aspnet:11.0
-  runtime, non-root user, database path under a volume (`/data`, connection string via env
-  var), port 8080. `.dockerignore` excludes bin/obj/*.db/exports. Built and smoke-tested
-  locally (container /health 200) if disk allows; images removed afterwards.
-- `README.md`: what it is, architecture diagram (current: simulator, API, channel,
-  processor, SQLite, Parquet export, MCP server), how to run each part (API, simulator,
-  MCP with `claude mcp add`, Docker, export + DuckDB query), API endpoint list, link to
-  docs/adr and docs/time-zones.md, CI badge. Neutral, factual, no learner framing.
-- CI is green on GitHub (verified by the orchestrator after push).
+- Rejections that name a valid EAN (NegativeKwh, BadFormat with a valid ean) are stored
+  with ean, moment if parseable, reason, received time. Duplicates found by the processor are
+  stored the same way with reason Duplicate. Invalid-EAN items cannot be attributed and are
+  only counted in the POST response, as now.
+- `GET /meters/{ean}/days/{yyyy-MM-dd}`: the Europe/Amsterdam local day as
+  {quarters: [{start, kwh|null, readings}] for every QuarterHours.ForLocalDay start (92/96/
+  100), gaps: [moment], rejected: [{moment|null, reason}]}. Bad ean/date: 400.
+- `GET /quality/{yyyy-MM-dd}`: per meter {ean, gaps, rejected, duplicates} for that local
+  day, ordered by gaps+rejected+duplicates desc.
+- OpenAPI: Microsoft.AspNetCore.OpenApi (`AddOpenApi`, `MapOpenApi` at /openapi/v1.json).
+  Endpoints return typed results so every response schema comes from the C# records. The
+  document is also generated at build time (Microsoft.Extensions.ApiDescription.Server) into
+  `frontend/openapi/MeterFlow.Api.json`, committed.
+- CORS: one named policy allowing only the origin in `Cors:FrontendOrigin`
+  (appsettings.Development.json: http://localhost:5173), GET only; no wildcard. Absent
+  setting: no CORS. Tests: preflight from 5173 gets the header; another origin does not.
+
+## Acceptance criteria (M10 S2, frontend)
+
+- `frontend/`: Vite + React + TypeScript. TS types generated from
+  frontend/openapi/MeterFlow.Api.json with openapi-typescript; calls via openapi-fetch.
+  API base URL from VITE_API_URL (default http://localhost:5265).
+- One page: meter select (GET /meters), date input (default 2026-10-25), an SVG bar chart of
+  the day's quarters (all 92/96/100), quarters with gaps or rejections highlighted, a
+  legend, and a table of the 10 meters with most issues (GET /quality/{date}). Accessible:
+  labels, table semantics, chart has a text summary.
+- Frontend tests with Vitest + React Testing Library (jsdom), API calls mocked at the fetch
+  level, covering: the data-mapping function (DST day gives 100 bars, 92 on 2026-03-29;
+  gaps and rejections mark the right quarters); the page renders a meter list, the chart
+  with the right number of bars and an accessible text summary, highlighted quarters, and
+  the quality table ordered as returned; changing meter or date refetches; an API error
+  shows a message instead of crashing; an empty day shows an empty state.
+  `npm test` runs them; `npm run build` type-checks.
+- CI: a frontend job: dotnet build regenerates the OpenAPI document and fails if it differs
+  from the committed one; then npm ci, generate types, test, build.
+- README architecture diagram and run instructions updated.
 
 ## Shipped in M3
 

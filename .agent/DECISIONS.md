@@ -79,3 +79,9 @@ What: GitHub Actions build/test job plus a Docker build-and-run job; non-root ru
 Why: Local disk was too full for Docker; CI verifies the image on a clean machine. ADR 18.
 Rules out: Publishing images; root containers.
 Level: 1, autopilot.
+
+## 2026-11-16 — Dashboard: OpenAPI contract, generated TS types, CORS for one origin
+What: Build-time OpenAPI document committed; openapi-typescript types; CORS GET from 5173 only.
+Why: Frontend types follow the C# records, checked in CI; no wildcard origins. ADR 19-21.
+Rules out: Hand-written TS types; AllowAnyOrigin; DST logic in the browser.
+Level: 1, autopilot.

@@ -44,3 +44,5 @@ Format:
   rows or the request times out.
 - MCP tools throw on API 5xx or connection failure (generic SDK error) and return errors as
   text, not the MCP isError flag. Urgent when: the MCP server runs without the API beside it.
+- Dashboard not checked in a real browser (layout, dark mode); flagged quarters use one
+  colour for missing and rejected. Urgent when: the dashboard is shown to users.

@@ -191,6 +191,10 @@ public class ReadingsTests(MeterFlowFactory factory) : IClassFixture<MeterFlowFa
         public IEnumerable<Reading> Between(DateTimeOffset from, DateTimeOffset to) => inner.Between(from, to);
 
         public IEnumerable<MeterSummary> Meters() => inner.Meters();
+
+        public void AddRejections(IEnumerable<Domain.Rejection> rejections) => inner.AddRejections(rejections);
+
+        public IEnumerable<Domain.Rejection> RejectionsBetween(DateTimeOffset from, DateTimeOffset to) => inner.RejectionsBetween(from, to);
     }
 
     [Fact]

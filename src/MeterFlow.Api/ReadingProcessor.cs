@@ -50,7 +50,18 @@ sealed class ReadingProcessor(ChannelReader<Reading> queue, IServiceScopeFactory
         {
             using var scope = scopes.CreateScope();
             var store = scope.ServiceProvider.GetRequiredService<IReadingStore>();
-            int stored = batch.Count(store.Add);
+            int stored = 0;
+            foreach (var reading in batch)
+            {
+                if (store.Add(reading))
+                {
+                    stored++;
+                }
+                else
+                {
+                    store.AddRejections([new Rejection(reading.Ean, reading.Moment, RejectReason.Duplicate, DateTimeOffset.UtcNow)]);
+                }
+            }
             logger.LogInformation("Stored {Stored} readings, {Duplicates} duplicates", stored, batch.Count - stored);
         }
         catch (Exception e) when (e is not OperationCanceledException)

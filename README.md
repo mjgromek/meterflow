@@ -5,7 +5,7 @@
 An energy-metering pipeline in C# on .NET 11. Simulated meters send a reading every 5 minutes;
 the API validates and queues them, a background service stores them in SQLite, and the data
 is served as 15-minute consumption over REST, exported to Parquet, and exposed to AI agents
-through a read-only MCP server. All data is synthetic.
+through a read-only MCP server and a React dashboard. All data is synthetic.
 
 ## Architecture
 
@@ -19,6 +19,7 @@ flowchart LR
     Mcp[MCP server<br/>stdio] -- GET --> Api
     Agent[MCP client] --> Mcp
     Duck[DuckDB] -.-> Pq
+    Dash[Dashboard<br/>React + TypeScript] -- GET, CORS --> Api
 ```
 
 | Project | Role |
@@ -28,6 +29,7 @@ flowchart LR
 | `src/MeterFlow.Api` | Minimal API, bounded channel, background processor. |
 | `src/MeterFlow.Simulator` | Generates readings with a day/night profile and deliberate gaps and duplicates; writes CSV or posts to the API. |
 | `src/MeterFlow.Mcp` | Read-only MCP server (`list_meters`, `get_consumption`, `find_gaps`) that calls the API. |
+| `frontend` | React + TypeScript dashboard (Vite): per-quarter chart of a meter's day and a data-quality table. Types and client generated from the API's OpenAPI document. |
 | `tests/` | xUnit tests; API tests run the whole app in-process with `WebApplicationFactory`. |
 
 Dependencies point inward: Domain references nothing. Design decisions are recorded in
@@ -85,6 +87,25 @@ duckdb -c "SELECT ean, day, count(*) AS quarters, sum(kwh) AS kwh
 claude mcp add meterflow -- dotnet run --project src/MeterFlow.Mcp
 ```
 
+**Dashboard** (needs the API running on `http://localhost:5265`, which allows the
+dashboard's origin `http://localhost:5173` through `Cors:FrontendOrigin` in the `http` launch
+profile; another API address goes in `VITE_API_URL`). Requires Node.js LTS.
+
+```sh
+dotnet run --project src/MeterFlow.Api
+cd frontend && npm ci && npm run dev
+```
+
+Open `http://localhost:5173`, pick a meter and a day. Quarters with fewer than three readings
+or a rejected reading are highlighted. `npm test` runs the Vitest suite, `npm run build`
+type-checks and bundles.
+
+**OpenAPI contract**: `dotnet build` writes the API's OpenAPI document to
+`frontend/openapi/MeterFlow.Api.json` (also served at `/openapi/v1.json`).
+`npm run generate` turns it into `frontend/src/api/schema.d.ts`, which types every call made
+through `openapi-fetch`. Both files are committed; CI regenerates them and fails if either
+differs, so an API change that breaks the dashboard shows up as a type error.
+
 **Docker** (API only; database and exports go to the `/data` volume):
 
 ```sh
@@ -105,6 +126,9 @@ the database and export paths.
 | GET | `/meters` | Each meter with reading count, first and last moment. |
 | GET | `/meters/{ean}/consumption?from=&to=` | 15-minute kWh totals in `[from, to)`. |
 | GET | `/gaps?from=&to=` | Missing 5-minute readings per meter, most gaps first. |
+| GET | `/meters/{ean}/days/{yyyy-MM-dd}` | Every quarter of the local day (92, 96 or 100) with kWh and reading count, gap moments, stored rejections. |
+| GET | `/quality/{yyyy-MM-dd}` | Gaps, rejections and duplicates per meter for the local day, most issues first. |
+| GET | `/openapi/v1.json` | OpenAPI document. |
 | POST | `/exports/{yyyy-MM-dd}` | Writes the local day's quarters to Parquet; returns path and row count. |
 
 Moments need an explicit offset or `Z`; anything else is a 400.
@@ -112,8 +136,7 @@ Moments need an explicit offset or `Z`; anything else is a 400.
 ## Continuous integration
 
 GitHub Actions ([ci.yml](.github/workflows/ci.yml)) restores tools, builds with warnings as
-errors and runs all tests on every push and pull request.
+errors and runs all tests on every push and pull request. A frontend job checks that the
+committed OpenAPI document and generated TypeScript types are current, then runs the
+dashboard tests and build.
 
-## Next
-
-A React + TypeScript dashboard reading through the API (milestone M10).
