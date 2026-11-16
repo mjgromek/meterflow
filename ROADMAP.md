@@ -95,7 +95,7 @@ Scope: hosted services, `Channel<T>`, `CancellationToken`, graceful shutdown.
 Done when: the API returns immediately, processing happens behind it, and shutdown does
 not drop queued readings silently.
 
-## [ ] M7. Parquet export
+## [x] M7. Parquet export
 Nightly-style export of 15-minute values per meter to Parquet, in a blob-style folder
 layout (`year=/month=/day=`).
 
