@@ -112,7 +112,7 @@ Scope: the C# MCP SDK, attributes, `HttpClient` factories, tool design for agent
 Done when: an MCP client answers "which meter had the most gaps yesterday?" through these
 tools.
 
-## [ ] M9. Ship it
+## [x] M9. Ship it
 GitHub Actions running build and tests, a Dockerfile for the API, API integration tests
 with `WebApplicationFactory`, and a README covering the architecture.
 

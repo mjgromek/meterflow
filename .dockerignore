@@ -1,0 +1,12 @@
+**/bin/
+**/obj/
+**/*.db
+**/*.db-shm
+**/*.db-wal
+**/exports/
+**/*.csv
+.git/
+.github/
+.agent/
+.claude/
+tests/
