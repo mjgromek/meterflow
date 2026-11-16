@@ -86,7 +86,7 @@ Scope: interfaces, EF Core mapping, migrations, `DbContext` lifetime.
 Done when: data survives a restart and an integration test runs against a throwaway
 database.
 
-## [ ] M6. Background pipeline
+## [x] M6. Background pipeline
 The API puts readings on a `Channel<T>`; a `BackgroundService` validates, stores and
 aggregates them.
 
