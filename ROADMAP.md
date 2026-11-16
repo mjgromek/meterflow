@@ -50,7 +50,7 @@ Scope: records, value semantics, constructors that refuse invalid input,
 
 Done when: an invalid `Ean` cannot be constructed, and tests prove it.
 
-## [ ] M2. Simulator
+## [x] M2. Simulator
 Console app generating realistic 5-minute readings for N meters (day/night pattern,
 noise, deliberate missing and duplicate readings) and writing them to CSV.
 

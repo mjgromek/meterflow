@@ -490,3 +490,4 @@ $RECYCLE.BIN/
 CLAUDE.md
 ROADMAP.local.md
 .claude/
+*.csv
