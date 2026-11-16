@@ -7,22 +7,22 @@ email), so pre-2026-11-16 hashes from conversations no longer resolve.
 
 ## Current slice
 
-None. M4 complete (S1-S5, checker PASS, 79/79, real run simulator to API); awaiting
-milestone review. No merge or push before "approved".
+None. M5 complete (checker PASS, 82/82), auto-approved under the human's autopilot grant.
 
-## M4 slices (Web API, in-memory storage; persistence is M5)
+## Acceptance criteria (M5)
 
-- S1: `GET /health` returns 200; API test harness via WebApplicationFactory; the template
-  "Hello World" route and placeholder UnitTest1 removed.
-- S2: `POST /readings` takes a JSON array of {ean, moment, kwh}; valid readings go to a
-  singleton in-memory store behind an interface; response lists rejected items by index and
-  reason (same reasons as ReadingCsv). Malformed JSON: 400.
-- S3: `GET /meters/{ean}/consumption?from=&to=` returns 15-minute quarters from
-  QuarterHours.Aggregate in [from, to). Invalid EAN or from >= to: 400. Unknown meter: empty.
-- S4: simulator sends readings over HTTP (`--api <url>`) with HttpClient and async/await;
-  CSV output stays the default. API base URL from appsettings.json.
-- S5: end to end: API started, simulator run against it, consumption totals equal the
-  generated totals. ILogger logs accepted and rejected counts per POST.
+- S1 (Infrastructure): `MeterFlowDbContext` (EF Core, SQLite) and `SqliteReadingStore :
+  IReadingStore`. Ean stored as its 18-digit string; Moment stored as UTC ticks (long) so
+  SQLite can compare and order it; read back as UTC. Unique index on (Ean, ticks): `Add`
+  returns false on a duplicate, enforced by the database, not a check-then-insert (closes the
+  backlog race item). `ForMeter` is an indexed query over [from, to), ordered. Initial
+  migration committed; `dotnet-ef` as a local tool (dotnet-tools.json at the repo root, where .NET 11 puts it).
+  Store tests against a throwaway SQLite file: add, duplicate across offsets, [from, to).
+- S2 (Api): registration scoped (DbContext lifetime), connection string in appsettings.json
+  (`Data Source=meterflow.db`), migrations applied at startup, `InMemoryReadingStore`
+  deleted, `*.db` gitignored. API tests use a throwaway database per factory. A restart test:
+  POST with one factory, dispose, a new factory on the same file returns the data. All
+  existing API tests still pass.
 
 ## Shipped in M3
 

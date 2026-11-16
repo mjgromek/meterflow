@@ -44,8 +44,8 @@ public class EndToEndTests
             .ToList();
         var stored = faulted.DistinctBy(r => (r.Ean, r.Moment)).ToList();
         var log = new LogCapture();
-        using var factory = new WebApplicationFactory<Program>()
-            .WithWebHostBuilder(b => b.ConfigureLogging(l => l.AddProvider(log)));
+        using var database = new MeterFlowFactory();
+        using var factory = database.WithWebHostBuilder(b => b.ConfigureLogging(l => l.AddProvider(log)));
         var client = factory.CreateClient();
 
         var (accepted, rejected) = await ApiSender.SendAsync(client, faulted, batchSize: 1000);

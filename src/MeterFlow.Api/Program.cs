@@ -1,12 +1,19 @@
 using System.Globalization;
 using System.Text.Json.Serialization;
-using MeterFlow.Api;
 using MeterFlow.Domain;
+using MeterFlow.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddSingleton<IReadingStore, InMemoryReadingStore>();
+builder.Services.AddDbContext<MeterFlowDbContext>(o => o.UseSqlite(builder.Configuration.GetConnectionString("MeterFlow")));
+builder.Services.AddScoped<IReadingStore, SqliteReadingStore>();
 builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.NumberHandling = JsonNumberHandling.Strict);
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    scope.ServiceProvider.GetRequiredService<MeterFlowDbContext>().Database.Migrate();
+}
 
 app.MapGet("/health", () => Results.Ok());
 
