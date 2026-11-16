@@ -7,25 +7,25 @@ email), so pre-2026-11-16 hashes from conversations no longer resolve.
 
 ## Current slice
 
-None. M6 complete (83/83, builder real run with graceful drain; no separate checker pass
-under autopilot time limits), auto-approved under the human's autopilot grant.
+None. M7 complete (86/86, DuckDB test, builder real run; no separate checker pass under
+autopilot), auto-approved under the human's autopilot grant. Next: M8 MCP server.
 
-## Acceptance criteria (M6)
+## Acceptance criteria (M7)
 
-- `POST /readings` validates format synchronously (BadFormat, InvalidEan, NegativeKwh, per
-  item as now) and returns 202 Accepted with {accepted: queued count, rejected}. Valid
-  readings go onto a bounded `Channel<Reading>` (singleton); when full, the POST awaits
-  (backpressure), honouring the request's CancellationToken.
-- A `BackgroundService` (ReadingProcessor) reads the channel, stores readings through a
-  scoped IReadingStore (one scope per drained batch), and logs stored and duplicate counts.
-  Duplicates are no longer in the POST response; ADR 10 is superseded for that part.
-- Graceful shutdown: on stop, the processor drains everything already queued before
-  returning; if the host's shutdown timeout cuts it off, it logs how many readings were
-  dropped. A test proves queued readings are stored after StopAsync.
-- Tests that relied on synchronous storing wait for processing (e.g. poll consumption with a
-  timeout, or a small "drained" signal) rather than sleeping fixed times. The concurrent
-  identical POSTs still store once; the end-to-end test still matches totals.
-- ApiSender and the simulator still work (202 handled; rejected counts are format only).
+- `IReadingStore.Between(from, to)` returns all meters' readings in [from, to) (SQLite
+  implementation, indexed if cheap).
+- `QuarterExport` in Infrastructure writes one Europe/Amsterdam local day (bounds from
+  `QuarterHours.ForLocalDay`) as Parquet with Parquet.Net to
+  `<root>/year=YYYY/month=MM/day=DD/quarters.parquet`, columns ean (string), start
+  (timestamp, UTC), kwh (decimal). Rows from QuarterHours.Aggregate, ordered by ean, start.
+  Re-exporting a day overwrites the file. Writes through a stream; uses a generic helper only
+  if it removes duplication.
+- `POST /exports/{date}` (date as yyyy-MM-dd) exports that day and returns 200 with
+  {path, rows}; bad date: 400. Export root from appsettings.json (`Export:Root`, default
+  `exports`), gitignored.
+- A test reads the exported file with DuckDB (DuckDB.NET.Data.Full in Api.Tests only):
+  for 2 meters on 2026-10-25, DuckDB sees 200 rows (100 per meter) and per-meter sums equal
+  the API's consumption totals for that day.
 
 ## Shipped in M3
 

@@ -16,5 +16,7 @@ public class MeterFlowDbContext(DbContextOptions<MeterFlowDbContext> options) : 
         reading.Property(r => r.Ean).HasConversion(e => e.Value, v => Ean.Parse(v)).HasMaxLength(Ean.Length);
         // The key is the unique index that rejects duplicates and serves ForMeter's range query.
         reading.HasKey(r => new { r.Ean, r.Moment });
+        // Serves Between's all-meter range query, which the (Ean, Moment) key cannot.
+        reading.HasIndex(r => r.Moment);
     }
 }

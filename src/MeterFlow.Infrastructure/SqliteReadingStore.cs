@@ -30,4 +30,9 @@ public class SqliteReadingStore(MeterFlowDbContext db) : IReadingStore
             .Where(r => r.Ean == ean && r.Moment >= from && r.Moment < to)
             .OrderBy(r => r.Moment)
             .ToList();
+
+    public IEnumerable<Reading> Between(DateTimeOffset from, DateTimeOffset to) =>
+        db.Readings.AsNoTracking()
+            .Where(r => r.Moment >= from && r.Moment < to)
+            .ToList();
 }

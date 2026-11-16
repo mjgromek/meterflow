@@ -60,3 +60,10 @@ Why: Requests no longer wait on the database; graceful stop keeps accepted readi
      A failed batch is logged and skipped instead of stopping the host. See ADR 14 and 15.
 Rules out: Duplicate reporting in the POST response; external queue services.
 Level: 1, autopilot.
+
+## 2026-11-16 — Parquet export per Amsterdam local day, triggered over HTTP
+What: POST /exports/{date} writes year=/month=/day=/quarters.parquet via Parquet.Net.
+Why: DuckDB reads typed Parquet with Hive partitions; the local day is the business day.
+     A scheduler calls the endpoint instead of an in-process timer. See ADR 16.
+Rules out: CSV export; UTC-day files; an in-process nightly timer.
+Level: 1, autopilot.
