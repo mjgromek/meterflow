@@ -131,7 +131,7 @@ the frontend build in GitHub Actions, the README architecture diagram updated.
 
 Done when: the dashboard shows a DST day correctly from a running API, and CI builds both.
 
-## [ ] M11. Hardening
+## [x] M11. Hardening
 Close the known gaps found while building M3 to M10: complete gap detection across a whole
 local day, stricter CSV input, crash-safe exports, clear errors when the API is unreachable
 (simulator and MCP tools), and evenly spaced chart labels.
