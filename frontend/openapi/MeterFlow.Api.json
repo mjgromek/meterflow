@@ -1,0 +1,535 @@
+{
+  "openapi": "3.2.0",
+  "info": {
+    "title": "MeterFlow.Api | v1",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "MeterFlow.Api"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/meters/{ean}/consumption": {
+      "get": {
+        "tags": [
+          "MeterFlow.Api"
+        ],
+        "parameters": [
+          {
+            "name": "ean",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Quarter"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          }
+        }
+      }
+    },
+    "/meters/{ean}/days/{date}": {
+      "get": {
+        "tags": [
+          "MeterFlow.Api"
+        ],
+        "parameters": [
+          {
+            "name": "ean",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeterDay"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          }
+        }
+      }
+    },
+    "/quality/{date}": {
+      "get": {
+        "tags": [
+          "MeterFlow.Api"
+        ],
+        "parameters": [
+          {
+            "name": "date",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MeterQuality"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          }
+        }
+      }
+    },
+    "/meters": {
+      "get": {
+        "tags": [
+          "MeterFlow.Api"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MeterRow"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/gaps": {
+      "get": {
+        "tags": [
+          "MeterFlow.Api"
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MeterGaps"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          }
+        }
+      }
+    },
+    "/exports/{date}": {
+      "post": {
+        "tags": [
+          "MeterFlow.Api"
+        ],
+        "parameters": [
+          {
+            "name": "date",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          }
+        }
+      }
+    },
+    "/readings": {
+      "post": {
+        "tags": [
+          "MeterFlow.Api"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ReadingItem"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostReadingsResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DayQuarter": {
+        "required": [
+          "start",
+          "kwh",
+          "readings"
+        ],
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "kwh": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "readings": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "DayRejection": {
+        "required": [
+          "moment",
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "moment": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/RejectReason"
+          }
+        }
+      },
+      "ExportResult": {
+        "required": [
+          "path",
+          "rows"
+        ],
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "rows": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "MeterDay": {
+        "required": [
+          "quarters",
+          "gaps",
+          "rejected"
+        ],
+        "type": "object",
+        "properties": {
+          "quarters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DayQuarter"
+            }
+          },
+          "gaps": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          "rejected": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DayRejection"
+            }
+          }
+        }
+      },
+      "MeterGaps": {
+        "required": [
+          "ean",
+          "count",
+          "moments"
+        ],
+        "type": "object",
+        "properties": {
+          "ean": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "moments": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        }
+      },
+      "MeterQuality": {
+        "required": [
+          "ean",
+          "gaps",
+          "rejected",
+          "duplicates"
+        ],
+        "type": "object",
+        "properties": {
+          "ean": {
+            "type": "string"
+          },
+          "gaps": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "rejected": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "duplicates": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "MeterRow": {
+        "required": [
+          "ean",
+          "readings",
+          "first",
+          "last"
+        ],
+        "type": "object",
+        "properties": {
+          "ean": {
+            "type": "string"
+          },
+          "readings": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "first": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "last": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PostReadingsResult": {
+        "required": [
+          "accepted",
+          "rejected"
+        ],
+        "type": "object",
+        "properties": {
+          "accepted": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "rejected": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RejectedItem"
+            }
+          }
+        }
+      },
+      "Quarter": {
+        "required": [
+          "start",
+          "kwh"
+        ],
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "kwh": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "ReadingItem": {
+        "required": [
+          "ean",
+          "moment",
+          "kwh"
+        ],
+        "type": "object",
+        "properties": {
+          "ean": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "moment": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "kwh": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "RejectedItem": {
+        "required": [
+          "index",
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "index": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
+      "RejectReason": {
+        "enum": [
+          "BadFormat",
+          "InvalidEan",
+          "NegativeKwh",
+          "Duplicate"
+        ]
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "MeterFlow.Api"
+    }
+  ]
+}

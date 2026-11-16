@@ -19,6 +19,34 @@ jobs:
       - run: dotnet build
       - run: dotnet test --no-build
 
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 11.0.x
+      - name: Build (regenerates the OpenAPI document)
+        run: dotnet build
+        working-directory: .
+      - name: OpenAPI document matches the committed one
+        run: git diff --exit-code frontend/openapi
+        working-directory: .
+      - uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run generate
+      - name: Generated types match the committed ones
+        run: git diff --exit-code src/api
+      - run: npm test
+      - run: npm run build
+
   docker:
     runs-on: ubuntu-latest
     steps:
