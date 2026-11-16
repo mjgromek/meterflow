@@ -73,3 +73,9 @@ What: Three read-only tools over a typed HttpClient; API adds GET /meters and GE
 Why: One query path for all clients; agents cannot write. See ADR 17.
 Rules out: Direct database access from the MCP server; write tools.
 Level: 1, autopilot.
+
+## 2026-11-16 — CI builds, tests and smoke-tests the container on every push
+What: GitHub Actions build/test job plus a Docker build-and-run job; non-root runtime image.
+Why: Local disk was too full for Docker; CI verifies the image on a clean machine. ADR 18.
+Rules out: Publishing images; root containers.
+Level: 1, autopilot.

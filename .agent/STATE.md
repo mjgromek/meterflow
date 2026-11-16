@@ -7,26 +7,23 @@ email), so pre-2026-11-16 hashes from conversations no longer resolve.
 
 ## Current slice
 
-None. M8 complete (92/92, real stdio run answered the gaps question), auto-approved.
-Next: M9.
+None. M9 complete (CI green on GitHub incl. container smoke test), auto-approved.
+Next: M10.
 
-## Acceptance criteria (M8)
+## Acceptance criteria (M9)
 
-- API: `GET /meters` returns [{ean, readings, first, last}] ordered by ean. `GET
-  /gaps?from=&to=` (same strict moment parsing) returns [{ean, count, moments}] for every
-  meter with readings in [from, to), using ReadingChecks.FindGaps, ordered by count desc.
-  Bad bounds: 400. Store gets what it needs (e.g. `Meters()` summary query).
-- `MeterFlow.Mcp`: a stdio MCP server with the official C# SDK (ModelContextProtocol
-  package), read-only tools `list_meters`, `get_consumption(ean, from, to)`,
-  `find_gaps(from, to)`, each with a description written for an agent (units, UTC/offset
-  requirement, what an empty result means). Tools call the API through a typed HttpClient
-  registered with `AddHttpClient`, base URL from configuration (`MeterFlow:ApiBaseUrl`,
-  default http://localhost:5265, overridable by env var). Logging goes to stderr only
-  (stdout is the protocol).
-- Tests: the tool methods called with WebApplicationFactory's HttpClient answer "which
-  meter had the most gaps on 2026-10-25" correctly for 2 meters with injected faults.
-- Real run: an MCP client (the SDK's client over stdio, in a throwaway program or test)
-  lists the three tools and calls find_gaps against a running API.
+- `.github/workflows/ci.yml`: on push and pull_request; ubuntu-latest; actions/setup-dotnet
+  with the .NET 11 SDK (global.json pins the SDK if needed for CI to match); `dotnet tool
+  restore`, `dotnet build`, `dotnet test`. No secrets.
+- `src/MeterFlow.Api/Dockerfile` (or at repo root): multi-stage, sdk:11.0 build/publish, aspnet:11.0
+  runtime, non-root user, database path under a volume (`/data`, connection string via env
+  var), port 8080. `.dockerignore` excludes bin/obj/*.db/exports. Built and smoke-tested
+  locally (container /health 200) if disk allows; images removed afterwards.
+- `README.md`: what it is, architecture diagram (current: simulator, API, channel,
+  processor, SQLite, Parquet export, MCP server), how to run each part (API, simulator,
+  MCP with `claude mcp add`, Docker, export + DuckDB query), API endpoint list, link to
+  docs/adr and docs/time-zones.md, CI badge. Neutral, factual, no learner framing.
+- CI is green on GitHub (verified by the orchestrator after push).
 
 ## Shipped in M3
 

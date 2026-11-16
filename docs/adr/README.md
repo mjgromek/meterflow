@@ -22,3 +22,4 @@ a new record that supersedes the old one; old records are not rewritten.
 | [15](0015-drain-on-shutdown.md) | Queued readings are drained on shutdown | M6 |
 | [16](0016-parquet-export-per-local-day.md) | Quarter-hour export as Parquet per local day, Hive-style paths | M7 |
 | [17](0017-read-only-mcp-server-over-the-api.md) | A read-only MCP server that goes through the REST API | M8 |
+| [18](0018-ci-and-container.md) | CI on GitHub Actions; the API ships as a non-root container | M9 |
