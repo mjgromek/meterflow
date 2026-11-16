@@ -7,22 +7,29 @@ email), so pre-2026-11-16 hashes from conversations no longer resolve.
 
 ## Current slice
 
-None. Patch v1.2.1 done (117 .NET + 11 frontend tests). Backlog empty apart from non-goals
-recorded in PROJECT.md. All roadmap milestones released.
+None. M12 complete (16 frontend tests; checked by the orchestrator in Chrome with 200 meters:
+sidebar search, badges, tiles, tooltip, quality-row selection; width and tile wrap fixed).
 
-## Acceptance criteria (patch)
+## Acceptance criteria (M12)
 
-- Simulator: when `--api` is absent, `MeterFlow__ApiBaseUrl` (env var) or a `--api` default
-  from configuration selects HTTP mode; otherwise CSV as now. Test on the argument/config
-  parsing function.
-- API: queue capacity from configuration `Pipeline:QueueCapacity` (default 10,000). A test
-  with capacity 1 and a blocked processor/store shows a POST waits while the queue is full
-  and completes once it drains, and that a cancelled request returns without enqueuing.
-- Dashboard: missing readings and rejected readings get different colours and legend
-  entries (both at least 3:1 against the background in light and dark); a quarter with both
-  shows as rejected. Frontend test.
-- Non-goals recorded in PROJECT.md: time zones other than Europe/Amsterdam; streaming
-  exports for days above ~1M rows.
+- Layout: sidebar with a search field filtering the meter list (200+ meters, scrolls on its
+  own); each row shows the EAN and an issue badge (gaps+rejected+duplicates for the chosen
+  day from /quality). On narrow screens the list collapses above the content.
+- Header: selected meter, date with previous/next-day buttons and a date input; a
+  translucent sticky header (backdrop blur) in light and dark mode.
+- Summary tiles: total kWh, peak quarter (local time and kWh), quarters in the day
+  (92/96/100), issues.
+- Chart: bars grow from the baseline with a CSS transform transition (~300 ms ease-out) when
+  data changes; hover or keyboard focus on a bar shows a tooltip with local time, kWh,
+  reading count and its flags. Existing colours, legend and text summary stay.
+- Quality card: top 10 as now; clicking or pressing Enter on a row selects that meter.
+- While refetching, the previous data stays visible (dimmed); first load shows a skeleton.
+  Content changes fade in. `prefers-reduced-motion: reduce` disables all transitions.
+- Style: system font stack (-apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui),
+  rounded cards, soft shadows, generous spacing, visible focus rings. Plain CSS, no new
+  runtime dependencies.
+- Tests: existing behaviour kept; new tests for search filtering, previous/next day,
+  clicking a quality row, the tooltip content, and that the badge counts come from /quality.
 
 ## Shipped in M3
 
