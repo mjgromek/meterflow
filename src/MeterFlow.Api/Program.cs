@@ -34,6 +34,16 @@ app.MapGet("/meters/{ean}/consumption", (string ean, string? from, string? to, I
             .Select(q => new Quarter(q.Start, q.Kwh)))
         : Results.BadRequest());
 
+app.MapPost("/exports/{date}", async (string date, IReadingStore store, IConfiguration config, CancellationToken cancel) =>
+{
+    if (!DateOnly.TryParseExact(date, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var day))
+    {
+        return Results.BadRequest();
+    }
+    var (path, rows) = await QuarterExport.WriteAsync(store, day, config["Export:Root"] ?? "exports", cancel);
+    return Results.Ok(new ExportResult(path, rows));
+});
+
 app.MapPost("/readings", async (ReadingItem?[] items, ChannelWriter<Reading> queue, ILogger<Program> logger, CancellationToken cancel) =>
 {
     int accepted = 0;
@@ -74,3 +84,5 @@ record Rejection(int Index, string Reason);
 record PostReadingsResult(int Accepted, IReadOnlyList<Rejection> Rejected);
 
 record Quarter(DateTimeOffset Start, decimal Kwh);
+
+record ExportResult(string Path, int Rows);

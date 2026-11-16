@@ -7,4 +7,7 @@ public interface IReadingStore
 
     /// <summary>Readings for one meter with from &lt;= Moment &lt; to, ordered by Moment.</summary>
     IEnumerable<Reading> ForMeter(Ean ean, DateTimeOffset from, DateTimeOffset to);
+
+    /// <summary>Readings for all meters with from &lt;= Moment &lt; to, unordered.</summary>
+    IEnumerable<Reading> Between(DateTimeOffset from, DateTimeOffset to);
 }

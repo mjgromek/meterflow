@@ -496,3 +496,6 @@ ROADMAP.local.md
 *.db
 *.db-shm
 *.db-wal
+
+# Parquet exports
+exports/
