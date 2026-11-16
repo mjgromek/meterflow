@@ -7,25 +7,26 @@ email), so pre-2026-11-16 hashes from conversations no longer resolve.
 
 ## Current slice
 
-None. M7 complete (86/86, DuckDB test, builder real run; no separate checker pass under
-autopilot), auto-approved under the human's autopilot grant. Next: M8 MCP server.
+None. M8 complete (92/92, real stdio run answered the gaps question), auto-approved.
+Next: M9.
 
-## Acceptance criteria (M7)
+## Acceptance criteria (M8)
 
-- `IReadingStore.Between(from, to)` returns all meters' readings in [from, to) (SQLite
-  implementation, indexed if cheap).
-- `QuarterExport` in Infrastructure writes one Europe/Amsterdam local day (bounds from
-  `QuarterHours.ForLocalDay`) as Parquet with Parquet.Net to
-  `<root>/year=YYYY/month=MM/day=DD/quarters.parquet`, columns ean (string), start
-  (timestamp, UTC), kwh (decimal). Rows from QuarterHours.Aggregate, ordered by ean, start.
-  Re-exporting a day overwrites the file. Writes through a stream; uses a generic helper only
-  if it removes duplication.
-- `POST /exports/{date}` (date as yyyy-MM-dd) exports that day and returns 200 with
-  {path, rows}; bad date: 400. Export root from appsettings.json (`Export:Root`, default
-  `exports`), gitignored.
-- A test reads the exported file with DuckDB (DuckDB.NET.Data.Full in Api.Tests only):
-  for 2 meters on 2026-10-25, DuckDB sees 200 rows (100 per meter) and per-meter sums equal
-  the API's consumption totals for that day.
+- API: `GET /meters` returns [{ean, readings, first, last}] ordered by ean. `GET
+  /gaps?from=&to=` (same strict moment parsing) returns [{ean, count, moments}] for every
+  meter with readings in [from, to), using ReadingChecks.FindGaps, ordered by count desc.
+  Bad bounds: 400. Store gets what it needs (e.g. `Meters()` summary query).
+- `MeterFlow.Mcp`: a stdio MCP server with the official C# SDK (ModelContextProtocol
+  package), read-only tools `list_meters`, `get_consumption(ean, from, to)`,
+  `find_gaps(from, to)`, each with a description written for an agent (units, UTC/offset
+  requirement, what an empty result means). Tools call the API through a typed HttpClient
+  registered with `AddHttpClient`, base URL from configuration (`MeterFlow:ApiBaseUrl`,
+  default http://localhost:5265, overridable by env var). Logging goes to stderr only
+  (stdout is the protocol).
+- Tests: the tool methods called with WebApplicationFactory's HttpClient answer "which
+  meter had the most gaps on 2026-10-25" correctly for 2 meters with injected faults.
+- Real run: an MCP client (the SDK's client over stdio, in a throwaway program or test)
+  lists the three tools and calls find_gaps against a running API.
 
 ## Shipped in M3
 

@@ -42,3 +42,5 @@ Format:
   being written. Fix: write to a temp file and File.Move(overwrite: true).
 - Export builds the whole day in memory inside the request. Urgent when: a day exceeds ~1M
   rows or the request times out.
+- MCP tools throw on API 5xx or connection failure (generic SDK error) and return errors as
+  text, not the MCP isError flag. Urgent when: the MCP server runs without the API beside it.

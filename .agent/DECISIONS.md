@@ -67,3 +67,9 @@ Why: DuckDB reads typed Parquet with Hive partitions; the local day is the busin
      A scheduler calls the endpoint instead of an in-process timer. See ADR 16.
 Rules out: CSV export; UTC-day files; an in-process nightly timer.
 Level: 1, autopilot.
+
+## 2026-11-16 — MCP server is read-only and reaches data only through the API
+What: Three read-only tools over a typed HttpClient; API adds GET /meters and GET /gaps.
+Why: One query path for all clients; agents cannot write. See ADR 17.
+Rules out: Direct database access from the MCP server; write tools.
+Level: 1, autopilot.
