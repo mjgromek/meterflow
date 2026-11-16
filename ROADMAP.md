@@ -103,7 +103,7 @@ Scope: Parquet.Net, streams, generics.
 
 Done when: DuckDB reads the files and the totals match the API.
 
-## [ ] M8. MCP server
+## [x] M8. MCP server
 A read-only MCP server exposing `list_meters`, `get_consumption` and `find_gaps` over the
 API.
 
