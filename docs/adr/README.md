@@ -18,3 +18,5 @@ a new record that supersedes the old one; old records are not rewritten.
 | [11](0011-in-process-api-tests.md) | API tests run in-process | M4 |
 | [12](0012-sqlite-store-with-ef-core.md) | Readings stored in SQLite through EF Core | M5 |
 | [13](0013-migrations-at-startup.md) | EF Core migrations, applied at startup | M5 |
+| [14](0014-background-processing-with-channel.md) | Readings are stored by a background service fed by a bounded channel | M6 |
+| [15](0015-drain-on-shutdown.md) | Queued readings are drained on shutdown | M6 |

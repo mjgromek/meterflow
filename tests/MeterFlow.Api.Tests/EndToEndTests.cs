@@ -50,10 +50,12 @@ public class EndToEndTests
 
         var (accepted, rejected) = await ApiSender.SendAsync(client, faulted, batchSize: 1000);
 
-        Assert.Equal(stored.Count, accepted);
-        Assert.Equal(faulted.Count - stored.Count, rejected);
-        Assert.NotEqual(0, rejected);
+        Assert.Equal(faulted.Count, accepted);
+        Assert.Equal(0, rejected);
+        Assert.NotEqual(faulted.Count, stored.Count);
         Assert.Contains($"POST /readings: {accepted} accepted, {rejected} rejected", log.Messages);
+        // Both meters are queued before the last reading, which is the second meter's.
+        await ReadingsTests.WaitUntilStored(factory, meters[1].Value, stored.Count(r => r.Ean == meters[1]));
         string from = Uri.EscapeDataString(starts[0].ToString("O"));
         string to = Uri.EscapeDataString(starts[^1].Add(QuarterHours.Length).ToString("O"));
         foreach (var ean in meters)

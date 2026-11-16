@@ -17,7 +17,7 @@ public class ApiSenderTests(MeterFlowFactory factory) : IClassFixture<MeterFlowF
     }
 
     [Fact]
-    public async Task SendAsync_posts_in_batches_and_totals_accepted_and_rejected()
+    public async Task SendAsync_posts_in_batches_and_totals_accepted_and_rejected_with_duplicates_queued()
     {
         var start = new DateTimeOffset(2026, 3, 2, 10, 0, 0, TimeSpan.FromHours(1));
         var readings = MeterSeries.For(SyntheticEan.For(30), start, 4, new Random(1)).ToList();
@@ -26,7 +26,7 @@ public class ApiSenderTests(MeterFlowFactory factory) : IClassFixture<MeterFlowF
 
         var totals = await ApiSender.SendAsync(factory.CreateDefaultClient(counter), readings, batchSize: 2);
 
-        Assert.Equal((4, 1), totals);
+        Assert.Equal((5, 0), totals);
         Assert.Equal(3, counter.Requests);
     }
 }

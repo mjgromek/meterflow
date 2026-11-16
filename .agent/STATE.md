@@ -7,22 +7,25 @@ email), so pre-2026-11-16 hashes from conversations no longer resolve.
 
 ## Current slice
 
-None. M5 complete (checker PASS, 82/82), auto-approved under the human's autopilot grant.
+None. M6 complete (83/83, builder real run with graceful drain; no separate checker pass
+under autopilot time limits), auto-approved under the human's autopilot grant.
 
-## Acceptance criteria (M5)
+## Acceptance criteria (M6)
 
-- S1 (Infrastructure): `MeterFlowDbContext` (EF Core, SQLite) and `SqliteReadingStore :
-  IReadingStore`. Ean stored as its 18-digit string; Moment stored as UTC ticks (long) so
-  SQLite can compare and order it; read back as UTC. Unique index on (Ean, ticks): `Add`
-  returns false on a duplicate, enforced by the database, not a check-then-insert (closes the
-  backlog race item). `ForMeter` is an indexed query over [from, to), ordered. Initial
-  migration committed; `dotnet-ef` as a local tool (dotnet-tools.json at the repo root, where .NET 11 puts it).
-  Store tests against a throwaway SQLite file: add, duplicate across offsets, [from, to).
-- S2 (Api): registration scoped (DbContext lifetime), connection string in appsettings.json
-  (`Data Source=meterflow.db`), migrations applied at startup, `InMemoryReadingStore`
-  deleted, `*.db` gitignored. API tests use a throwaway database per factory. A restart test:
-  POST with one factory, dispose, a new factory on the same file returns the data. All
-  existing API tests still pass.
+- `POST /readings` validates format synchronously (BadFormat, InvalidEan, NegativeKwh, per
+  item as now) and returns 202 Accepted with {accepted: queued count, rejected}. Valid
+  readings go onto a bounded `Channel<Reading>` (singleton); when full, the POST awaits
+  (backpressure), honouring the request's CancellationToken.
+- A `BackgroundService` (ReadingProcessor) reads the channel, stores readings through a
+  scoped IReadingStore (one scope per drained batch), and logs stored and duplicate counts.
+  Duplicates are no longer in the POST response; ADR 10 is superseded for that part.
+- Graceful shutdown: on stop, the processor drains everything already queued before
+  returning; if the host's shutdown timeout cuts it off, it logs how many readings were
+  dropped. A test proves queued readings are stored after StopAsync.
+- Tests that relied on synchronous storing wait for processing (e.g. poll consumption with a
+  timeout, or a small "drained" signal) rather than sleeping fixed times. The concurrent
+  identical POSTs still store once; the end-to-end test still matches totals.
+- ApiSender and the simulator still work (202 handled; rejected counts are format only).
 
 ## Shipped in M3
 
