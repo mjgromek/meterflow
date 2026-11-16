@@ -53,3 +53,10 @@ Why: SQLite cannot order or compare DateTimeOffset; the PK makes duplicates a da
      closing the check-then-insert race. Migrations applied at startup. See ADR 12 and 13.
 Rules out: Keeping the original UTC offset; async store methods before M6.
 Level: 1.
+
+## 2026-11-16 — Background storing via a bounded Channel; drain on shutdown
+What: POST queues valid readings (202); ReadingProcessor stores batches; drains on stop.
+Why: Requests no longer wait on the database; graceful stop keeps accepted readings.
+     A failed batch is logged and skipped instead of stopping the host. See ADR 14 and 15.
+Rules out: Duplicate reporting in the POST response; external queue services.
+Level: 1, autopilot.

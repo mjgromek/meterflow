@@ -1,6 +1,6 @@
 # 10. Strict API input, rejected per item
 
-Status: Accepted · Milestone: M4
+Status: Duplicate reporting superseded by [14](0014-background-processing-with-channel.md) · Milestone: M4
 
 ## Context
 `POST /readings` receives batches from clients that may send partial or wrong data. A

@@ -33,3 +33,7 @@ Format:
   simulator runs unattended (M6).
 - API base URL comes only from `--api`, not appsettings.json. Urgent when: the simulator
   runs without arguments against an API.
+- Channel backpressure (full queue waits, honours cancellation) has no test; capacity is a
+  constant. Urgent when: clients rely on the full-queue behaviour or capacity is tuned.
+- `RejectReason.Duplicate` is no longer produced by the API (duplicates are logged by the
+  processor). Urgent when: a client asks for per-reading storage confirmation.
