@@ -42,14 +42,22 @@ describe("App", () => {
     });
     render(<App />);
 
-    const select = await screen.findByLabelText("Meter");
-    expect(within(select).getAllByRole("option").map((o) => o.textContent)).toEqual(meters.map((m) => m.ean));
+    const list = await screen.findByRole("list", { name: "Meters" });
+    await within(list).findAllByRole("button");
+    expect(within(list).getAllByRole("button").map((o) => o.textContent)).toEqual(meters.map((m) => m.ean));
+    expect(within(list).getByRole("button", { name: meters[0].ean })).toHaveAttribute("aria-current", "true");
     expect(screen.getByLabelText("Day")).toHaveValue("2026-10-25");
 
-    const chart = await screen.findByRole("img", { name: /100 quarters/ });
+    const chart = await screen.findByRole("group", { name: /100 quarters/ });
     expect(chart.querySelectorAll("rect.bar")).toHaveLength(100);
     expect(chart.querySelectorAll("rect.bar.flagged")).toHaveLength(2);
     expect(screen.getByText(/2 quarters with missing or rejected readings/)).toBeInTheDocument();
+
+    const tiles = screen.getByRole("list", { name: "Day summary" });
+    // 99 quarters at 0.25 kWh plus one at 0.05.
+    expect(within(tiles).getByText("Total").nextSibling).toHaveTextContent("24.80 kWh");
+    expect(within(tiles).getByText("Quarters").nextSibling).toHaveTextContent("100");
+    expect(within(tiles).getByText("Peak quarter").nextSibling).toHaveTextContent("00:00 · 0.25 kWh");
 
     const table = await screen.findByRole("table", { name: /most issues/ });
     const eans = within(table).getAllByRole("row").slice(1).map((row) => within(row).getAllByRole("cell")[0].textContent);
@@ -64,9 +72,9 @@ describe("App", () => {
       "/quality/2026-10-25": quality,
     });
     render(<App />);
-    await screen.findByRole("img", { name: /100 quarters/ });
+    await screen.findByRole("group", { name: /100 quarters/ });
 
-    await userEvent.selectOptions(screen.getByLabelText("Meter"), "999000000000000014");
+    await userEvent.click(screen.getByRole("button", { name: "999000000000000014" }));
 
     expect(await screen.findByText(/2 quarters with missing or rejected readings/)).toBeInTheDocument();
     expect(requested()).toContain("/meters/999000000000000014/days/2026-10-25");
@@ -81,11 +89,11 @@ describe("App", () => {
       "/quality/2026-03-29": [],
     });
     render(<App />);
-    await screen.findByRole("img", { name: /100 quarters/ });
+    await screen.findByRole("group", { name: /100 quarters/ });
 
     fireEvent.change(screen.getByLabelText("Day"), { target: { value: "2026-03-29" } });
 
-    const chart = await screen.findByRole("img", { name: /92 quarters/ });
+    const chart = await screen.findByRole("group", { name: /92 quarters/ });
     expect(chart.querySelectorAll("rect.bar")).toHaveLength(92);
     expect(requested()).toContain("/quality/2026-03-29");
   });
@@ -106,6 +114,82 @@ describe("App", () => {
     render(<App />);
 
     expect(await screen.findByText(/no readings for this meter on 2026-10-25/i)).toBeInTheDocument();
-    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: /quarters/ })).not.toBeInTheDocument();
+  });
+
+  it("filters the meter list by search text and clears it", async () => {
+    stubApi({ "/meters": meters, "/meters/999000000000000007/days/2026-10-25": longDay(), "/quality/2026-10-25": [] });
+    render(<App />);
+    const list = await screen.findByRole("list", { name: "Meters" });
+    await within(list).findAllByRole("button");
+
+    await userEvent.type(screen.getByLabelText("Search meters"), "014");
+    expect(within(list).getAllByRole("button").map((b) => b.textContent)).toEqual(["999000000000000014"]);
+
+    await userEvent.click(screen.getByRole("button", { name: "Clear search" }));
+    expect(within(list).getAllByRole("button")).toHaveLength(2);
+    expect(screen.getByLabelText("Search meters")).toHaveValue("");
+  });
+
+  it("moves one day back and forward with the day buttons", async () => {
+    const requested = stubApi({
+      "/meters": meters,
+      "/meters/999000000000000007/days/2026-10-25": longDay(),
+      "/meters/999000000000000007/days/2026-10-26": longDay(),
+      "/meters/999000000000000007/days/2026-10-24": longDay(),
+      "/quality/2026-10-25": [],
+      "/quality/2026-10-26": [],
+      "/quality/2026-10-24": [],
+    });
+    render(<App />);
+    await screen.findByRole("group", { name: /100 quarters/ });
+
+    await userEvent.click(screen.getByRole("button", { name: "Next day" }));
+    expect(screen.getByLabelText("Day")).toHaveValue("2026-10-26");
+    await userEvent.click(screen.getByRole("button", { name: "Previous day" }));
+    await userEvent.click(screen.getByRole("button", { name: "Previous day" }));
+    expect(screen.getByLabelText("Day")).toHaveValue("2026-10-24");
+
+    await vi.waitFor(() => expect(requested()).toContain("/meters/999000000000000007/days/2026-10-24"));
+    expect(requested()).toEqual(expect.arrayContaining(["/quality/2026-10-26", "/quality/2026-10-24"]));
+  });
+
+  it("selects a meter from the quality table by click or Enter", async () => {
+    const requested = stubApi({
+      "/meters": meters,
+      "/meters/999000000000000007/days/2026-10-25": longDay(),
+      "/meters/999000000000000014/days/2026-10-25": flaggedDay(),
+      "/quality/2026-10-25": [
+        { ean: "999000000000000014", gaps: 3, rejected: 1, duplicates: 0 },
+        { ean: "999000000000000007", gaps: 1, rejected: 0, duplicates: 0 },
+      ],
+    });
+    render(<App />);
+    const table = await screen.findByRole("table", { name: /most issues/ });
+    const [, first, second] = within(table).getAllByRole("row");
+
+    await userEvent.click(within(first).getAllByRole("cell")[1]);
+    expect(await screen.findByText(/2 quarters with missing or rejected readings/)).toBeInTheDocument();
+    expect(requested()).toContain("/meters/999000000000000014/days/2026-10-25");
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("999000000000000014");
+    expect(within(screen.getByRole("list", { name: "Day summary" })).getByText("Issues").nextSibling).toHaveTextContent("4");
+
+    within(second).getByRole("button").focus();
+    await userEvent.keyboard("{Enter}");
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("999000000000000007");
+  });
+
+  it("takes the sidebar issue badges from /quality without fetching other meters' days", async () => {
+    const requested = stubApi({
+      "/meters": meters,
+      "/meters/999000000000000007/days/2026-10-25": longDay(),
+      "/quality/2026-10-25": [{ ean: "999000000000000014", gaps: 2, rejected: 1, duplicates: 4 }],
+    });
+    render(<App />);
+
+    const list = await screen.findByRole("list", { name: "Meters" });
+    expect(await within(list).findByRole("button", { name: "999000000000000014 7 issues" })).toBeInTheDocument();
+    expect(within(list).getByRole("button", { name: "999000000000000007" })).toBeInTheDocument();
+    expect(requested().filter((p) => p.includes("/days/"))).toEqual(["/meters/999000000000000007/days/2026-10-25"]);
   });
 });
