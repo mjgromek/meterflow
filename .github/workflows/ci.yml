@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 11.0.x
+      - run: dotnet tool restore
+      - run: dotnet build
+      - run: dotnet test --no-build
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: docker build -t meterflow-api .
+      - name: Smoke test the container
+        run: |
+          docker run -d --name api -p 8080:8080 -v meterflow-data:/data meterflow-api
+          for i in $(seq 1 30); do curl -fs http://localhost:8080/health && break; sleep 1; done
+          curl -fs -X POST http://localhost:8080/readings -H 'Content-Type: application/json' \
+            -d '[{"ean":"999000000000000007","moment":"2026-10-25T02:30:00+02:00","kwh":0.1}]'
+          sleep 2
+          docker exec api ls -l /data/meterflow.db
+          docker logs api
