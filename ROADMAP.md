@@ -77,7 +77,7 @@ Scope: ASP.NET Core, dependency injection and service lifetimes, `appsettings.js
 
 Done when: simulator to API works end to end.
 
-## [ ] M5. Persistence
+## [x] M5. Persistence
 Store readings in SQLite with EF Core. Repository interface in Domain, implementation in
 Infrastructure.
 
